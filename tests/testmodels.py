@@ -1,17 +1,11 @@
 import unittest
+import pandas as pd
+from crop import crop_statements_until_t
+from models import SimulateStatement, Model, ModelStats
 
-from text.text import (remove_url, remove_emoticons, tokenize_text,
-                       untokenize_text, get_text_cloud, get_freq_dist_list)
+class TestModels(unittest.TestCase):
+
+    def setUp(self):
+        self.tau = crop_statements_until_t
 
 
-def crop_statements_until_t(df, t):
-    
-    df = df[df.time<t]
-    idspoliticos = df.id_politico.unique();
-    tau = []
-    
-    for i in idspoliticos:
-        taui = df.isFavorable[df.id_politico == i]
-        tau.append([taui.tolist(),i])
-    
-    return tau

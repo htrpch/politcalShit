@@ -153,11 +153,11 @@ class ModelStats:
 
             Plista.append([p_intm,t])
 
-            A = [self.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
+            A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
             #np.where([x[0] for x in P]==1)
-            O = [self.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
+            O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
             #np.where([x[0] for x in P]==-1)
-            K = [self.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
+            K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
             #np.where([x[0] for x in P]==0)
 
             if(ii>0):
@@ -224,7 +224,8 @@ class ModelStats:
 
             statements = crop_statements_until_t(df, t)
 
-            P = run_model_exp_def(statements, l, delta)
+            #P = run_model_exp_def(statements, l, delta)
+            P = Model(statements).run_model(.93, .2,'exp')
 
             #Nnow = len(P)
             Plista.append(P)
