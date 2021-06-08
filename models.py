@@ -49,10 +49,10 @@ class SimulateStatement:
     # statements que podem assumir valor -1 ou 1
 
     def list_binary(self):
-      """
-      cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
-      statements que podem assumir valor -1 ou 1
-      """
+        """
+        cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
+        statements que podem assumir valor -1 ou 1
+        """
         statements = []
         for i in range(0,self.N):
             maxt = np.random.randint(0,self.maxtweets)
@@ -229,18 +229,35 @@ class ModelStats:
             #P = run_model_exp_def(statements, l, delta)
             P = Model(statements).run_model(.93, .2,'exp')
 
-            #Nnow = len(P)
-            Plista.append(P)
+            statements,id_politico = elem
+            P = Model(statements).run_model(.93, .2,'exp')
+            p_intm.append([P,id_politico])
 
-            A = np.where(P==1)
-            O = np.where(P==-1)
-            K = np.where(P==0)
+            # funcao
+            # se tau=[] retorna 0
+            # caso contrario traz tau[-1] (ultimo tweet)
+
+            Plista.append([p_intm,t])
+
+            A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
+            #np.where([x[0] for x in P]==1)
+            O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
+            #np.where([x[0] for x in P]==-1)
+            K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
+            #np.where([x[0] for x in P]==0)
+
+            #Nnow = len(P)
+            #Plista.append(P)
+
+            #A = np.where(P==1)
+            #O = np.where(P==-1)
+            #K = np.where(P==0)
 
             if(ii>1):
 
                 #Plista[len(Plista)-1] -> esse é o ultimo (P)
 
-                P0= Plista[len(Plista)-2]
+                P0 = Plista[len(Plista)-2]
 
                 #A0 = np.where(P0 == 1)
                 #O0 = np.where(P0 == -1)
