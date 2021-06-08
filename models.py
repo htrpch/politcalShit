@@ -1,63 +1,66 @@
 
-
-
+import numpy as np
+import pandas as pd
+from tests.crop import crop_statements_until_t
 
 class SimulateStatement:
-  def __init__(self, N, maxtweets):
-    self.N = N
-    self.maxtweets = maxtweets
+    def __init__(self, N, maxtweets):
+        self.N = N
+        self.maxtweets = maxtweets
     
     
-  def np_continuous(self):
-      """
-      cria tweets um vetor com NxMaxTweets
-      statements que podem assumir valor continuous
-      """
-      statements = np.zeros((self.N,self.maxtweets))
-      for i in range(0,self.N):
-          statements[i] =  np.random.uniform(-1,1,self.maxtweets)
-      return statements
+    def np_continuous(self):
+        """
+        cria tweets um vetor com NxMaxTweets
+        statements que podem assumir valor continuous
+        """
+        statements = np.zeros((self.N,self.maxtweets))
+        for i in range(0,self.N):
+            statements[i] =  np.random.uniform(-1,1,self.maxtweets)
+
+        return statements
     
-  def np_binary(self):
-      """
-      cria tweets um vetor com NxMaxTweets
-      statements que podem assumir valor -1 ou 1
-      """
-      statements = np.zeros((self.N,self.maxtweets))
-      for i in range(0,self.N):
-          #statements[i] =  np.random.uniform(-1,1,T)
-          statements[i] = np.random.randint(0,2,self.maxtweets)
-          statements[i][np.where(statements[i]==0)]=-1
-      return statements
+    def np_binary(self):
+        """
+        cria tweets um vetor com NxMaxTweets
+        statements que podem assumir valor -1 ou 1
+        """
+        statements = np.zeros((self.N,self.maxtweets))
+        for i in range(0,self.N):
+            #statements[i] =  np.random.uniform(-1,1,T)
+            statements[i] = np.random.randint(0,2,self.maxtweets)
+            statements[i][np.where(statements[i]==0)]=-1
+        return statements
 
 
   def list_continuous(self):
-      """
-      cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
-      statements que podem assumir valor continuous
-      """
-      statements = []
-      for i in range(0,self.N):
-          maxt = np.random.randint(0,self.maxtweets)
-          statementsi =  np.random.uniform(-1,1,maxt)
-          statements.append(statementsi)
-      return statements
+        """
+        cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
+        statements que podem assumir valor continuous
+        """
+        statements = []
+        for i in range(0,self.N):
+            maxt = np.random.randint(0,self.maxtweets)
+            statementsi =  np.random.uniform(-1,1,maxt)
+            statements.append(statementsi)
+        return statements
 
     # cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
     # statements que podem assumir valor -1 ou 1
 
-  def list_binary(self):
+    def list_binary(self):
       """
       cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
       statements que podem assumir valor -1 ou 1
       """
-      statements = []
-      for i in range(0,self.N):
-          maxt = np.random.randint(0,self.maxtweets)
-          statementsi =  np.random.randint(0,2,maxt)
-          statementsi[np.where(statementsi==0)]=-1
-          statements.append(statementsi)
-      return statements
+        statements = []
+        for i in range(0,self.N):
+            maxt = np.random.randint(0,self.maxtweets)
+            statementsi =  np.random.randint(0,2,maxt)
+            statementsi[np.where(statementsi==0)]=-1
+            statements.append(statementsi)
+
+        return statements
 
 class Model: 
     
@@ -95,8 +98,7 @@ class Model:
     def classifier(self,scores,delta):
         h=[]
         for i in range(len(scores)):
-            obj = np.mean(scores[:i])
-
+            obj = scores[i]
             if obj<-delta:
                 h.append(-1)
             if obj>delta:
@@ -106,7 +108,7 @@ class Model:
 
         return h
 
-    def run(self,l , delta, method='exp'): # t é n de enesimo tweet
+    def run(self, l , delta, method='exp'): # t é n de enesimo tweet
 
         if method=='exp':
             function = self.h_exp
@@ -116,7 +118,7 @@ class Model:
             function = self.h_mean
             scores = function()
 
-    return self.classifier(scores,delta)
+        return self.classifier(scores,delta)
 
 class ModelStats: 
     def __init__(self, tau):
@@ -124,7 +126,7 @@ class ModelStats:
         self.tau = tau
 
     
-    def get_changes_df_interval(df, l, delta,lag,method='exp'):
+    def get_changes_df_interval(df, l, delta, lag, method='exp'):
     
         Plista=[]
 
@@ -142,8 +144,8 @@ class ModelStats:
             #gets statements
             p_intm = []
             for elem in crop_statements_until_t(df, t):
-                statements,id_politico = elem
 
+                statements,id_politico = elem
                 P = Model(statements).run_model(.93, .2,'exp')
                 p_intm.append([P,id_politico])
 
@@ -334,3 +336,18 @@ class ModelStats:
         #return changes , Plista
         return fluxes, Plista
 
+    def get_fluxes_stats(fluxes):
+        # CONVENÇÃO PARA OS FLUXOS
+        # FLUXES: A -> K ; K -> O ; A -> O; #
+        #
+        means = [np.mean(np.transpose(fluxes)[0]),np.mean(np.transpose(fluxes)[1]),np.mean(np.transpose(fluxes)[2])]
+        stds = [np.std(np.transpose(fluxes)[0]),np.std(np.transpose(fluxes)[1]),np.std(np.transpose(fluxes)[2])]
+        #print(means)
+        return means, stds
+
+    def get_P_stats(Plista):
+        #pegamos a media do tamanho de cada conjunto
+        means = [np.mean(np.transpose(fluxes)[0]),np.mean(np.transpose(fluxes)[1]),np.mean(np.transpose(fluxes)[2])]
+        stds = [np.std(np.transpose(fluxes)[0]),np.std(np.transpose(fluxes)[1]),np.std(np.transpose(fluxes)[2])]
+        #print(means)
+        return means, stds
