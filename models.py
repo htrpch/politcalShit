@@ -143,7 +143,7 @@ class ModelStats:
             time.sleep(.1)
             #gets statements
             p_intm = []
-            for elem in crop_statements_until_t(df, t):
+            for elem in crop_statements_until_t(df, t): # de politico em politico
 
                 statements,id_politico = elem
                 P = Model(statements).run_model(l, delta,'exp')
@@ -222,16 +222,16 @@ class ModelStats:
 
             print(ii, end='\r')
             time.sleep(1)
+
             #gets statements
-
-            statements = crop_statements_until_t(df, t)
-
             #P = run_model_exp_def(statements, l, delta)
-            P = Model(statements).run_model(l, delta,'exp')
+            #P = Model(statements).run_model(l, delta,'exp')
 
-            statements,id_politico = elem
-            P = Model(statements).run_model(l, delta,'exp')
-            p_intm.append([P,id_politico])
+            for elem in crop_statements_until_t(df, t): # de politico em politico
+
+                statements,id_politico = elem
+                P = Model(statements).run_model(l, delta,'exp')
+                p_intm.append([P,id_politico])
 
             # funcao
             # se tau=[] retorna 0
