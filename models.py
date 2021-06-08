@@ -146,7 +146,7 @@ class ModelStats:
             for elem in crop_statements_until_t(df, t):
 
                 statements,id_politico = elem
-                P = Model(statements).run_model(.93, .2,'exp')
+                P = Model(statements).run_model(l, delta,'exp')
                 p_intm.append([P,id_politico])
 
             # funcao
@@ -227,10 +227,10 @@ class ModelStats:
             statements = crop_statements_until_t(df, t)
 
             #P = run_model_exp_def(statements, l, delta)
-            P = Model(statements).run_model(.93, .2,'exp')
+            P = Model(statements).run_model(l, delta,'exp')
 
             statements,id_politico = elem
-            P = Model(statements).run_model(.93, .2,'exp')
+            P = Model(statements).run_model(l, delta,'exp')
             p_intm.append([P,id_politico])
 
             # funcao
