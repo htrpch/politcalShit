@@ -33,7 +33,7 @@ class SimulateStatement:
         return statements
 
 
-  def list_continuous(self):
+    def list_continuous(self):
         """
         cria tweets um vetor com NxArbitrario (tamanho = # posts do politico)
         statements que podem assumir valor continuous
@@ -121,12 +121,16 @@ class Model:
         return self.classifier(scores,delta)
 
 class ModelStats: 
-    def __init__(self, tau):
-        self.N = len(tau)
-        self.tau = tau
+    def __init__(self, path, simulate = False):
+
+        if not simulate:
+            self.df = pd.read_csv(path)
+        #else:
+         #   self
+
 
     
-    def get_changes_df_interval(df, l, delta, lag, method='exp'):
+    def get_changes_df_interval(self, l, delta, lag, method='exp'):
     
         Plista=[]
 
@@ -143,7 +147,7 @@ class ModelStats:
             time.sleep(.1)
             #gets statements
             p_intm = []
-            for elem in crop_statements_until_t(df, t): # de politico em politico
+            for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
                 statements,id_politico = elem
                 P = Model(statements).run_model(l, delta,'exp')
@@ -188,8 +192,7 @@ class ModelStats:
         return changes,  Plista
 
 
-
-    def get_changes_exp_df_interval_L(df, l, delta,lag):
+    def get_changes_exp_df_interval_L(self, l, delta,lag):
         """
         Counts changes of opinion (changes within each set size) 
         following model dynamic
@@ -226,7 +229,8 @@ class ModelStats:
             #gets statements
             #P = run_model_exp_def(statements, l, delta)
             #P = Model(statements).run_model(l, delta,'exp')
-
+            
+            p_intm = []
             for elem in crop_statements_until_t(df, t): # de politico em politico
 
                 statements,id_politico = elem
@@ -300,7 +304,7 @@ class ModelStats:
         #return changes , Plista
         return changes, changesL , Plista
 
-    def get_fluxes_exp_df_interval(df, l, delta,lag):
+    def get_fluxes_exp_df_interval(self, l, delta,lag):
 
         Plista=[]
 
@@ -368,3 +372,50 @@ class ModelStats:
         stds = [np.std(np.transpose(fluxes)[0]),np.std(np.transpose(fluxes)[1]),np.std(np.transpose(fluxes)[2])]
         #print(means)
         return means, stds
+
+    
+    def study_delta(df,delta,l,lag):
+
+        m = []
+        s = []
+
+        for d in delta:
+
+            fluxes, Plista = get_fluxes_exp_df_interval(df, d, l, lag)
+            #print('debug')
+            meanss , stdss = get_fluxes_stats(fluxes)
+            #print('debug 1')
+            m.append(meanss)
+            s.append(stdss)
+        
+        return m, s
+
+    def study_l(df,delta,lambd,lag):
+
+        m = []
+        s = []
+
+        for l in lambd:
+
+            fluxes, Plista = get_fluxes_exp_df_interval(df, delta, l, lag)
+            #print('debug')
+            means , stds = get_fluxes_stats(fluxes)
+            #print('debug 1')
+            m.append(means)
+            s.append(stds)
+        
+        #print('xegou')
+        return m, s
+
+    def map_l_delta(df,delta,lambd,lag):
+
+        means3d=[]
+        stds3d=[]
+
+        for d in delta:
+            print(d)
+            m , s = study_l(df,d,lambd,lag)
+            means3d.append(m)
+            stds3d.append(s)
+        return means3d, stds3d
+
