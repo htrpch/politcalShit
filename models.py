@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+import time
 from tests.crop import crop_statements_until_t
 
 class SimulateStatement:
@@ -62,32 +63,51 @@ class SimulateStatement:
 
         return statements
 
+
+ 
 class Model: 
     
     def __init__(self, tau):
         self.N = len(tau)
         self.tau = tau
+
     #self.maxtweets = maxtweets
 
     def lastOr0(obj):
+
         if len(obj)==0:
             return 0
         else:
             return obj[-1]
 
+    def teste(self):
+        print('asas voam')
+        print(self.N)
+        print(self.tau)
+
     def h_exp(self,l):
 
-        h = np.zeros(len(self.tau))
+        h = np.zeros(self.N)
+
         h[0] = self.tau[0]
 
-        for i in range(1,len(self.tau)):
-          h[i] = l*h[i-1] + (1-l)*self.tau[i]
+        for i in range(1,self.N):
+
+            h[i] = l * h[i-1] + (1-l) * self.tau[i]
+
         return h
 
     # End result Score
 
-    def h_exp_escalar(self,l):
-        return h_exp(l,delta)[-1]
+    def h_exp_escalar(self, l):
+
+        h =  self.tau[0]
+
+        for i in range(1,self.N):
+
+            h = l * h + (1-l) * self.tau[i]
+
+        return h
 
     # Score as mean of posts
 
@@ -125,16 +145,15 @@ class ModelStats:
 
         if not simulate:
             self.df = pd.read_csv(path)
-        #else:
-         #   self
 
-
+    def headd(self):
+        return self.df.head()
     
     def get_changes_df_interval(self, l, delta, lag, method='exp'):
     
         Plista=[]
 
-        tempo = df.time[1::lag]
+        tempo = self.df.time[1::lag]
         changes = np.zeros(( len(tempo) , 3 ))
 
         ii = 0
@@ -150,7 +169,7 @@ class ModelStats:
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
                 statements,id_politico = elem
-                P = Model(statements).run_model(l, delta,'exp')
+                P = Model(statements).run(l, delta,'exp')
                 p_intm.append([P,id_politico])
 
             # funcao
@@ -312,7 +331,7 @@ class ModelStats:
 
         tempo = df.time[1::lag]
 
-        fluxes = np.zeros(( len(tempo) , 3 ))
+        self.fluxes = np.zeros(( len(tempo) , 3 ))
 
         # CONVENÇÃO PARA OS FLUXOS
         #
@@ -339,35 +358,41 @@ class ModelStats:
                 for i in phi:
                     #print(i)
                     if (i.tolist() == [ 0. , 1.]):
-                        fluxes[ii][0] += -1
+                        self.fluxes[ii][0] += -1
                     if (i.tolist() == [ 1. , 0.]):
-                        fluxes[ii][0] += 1
+                        self.fluxes[ii][0] += 1
                     if (i.tolist() == [ 0., -1.]):
-                        fluxes[ii][1] += 1
+                        self.fluxes[ii][1] += 1
                     if (i.tolist() == [ -1. , 0.]):
-                        fluxes[ii][1] += -1
+                        self.fluxes[ii][1] += -1
                     if (i.tolist() == [ 1. ,-1.]):
-                        fluxes[ii][2] += 1
+                        self.fluxes[ii][2] += 1
                     if (i.tolist() == [ -1., 1.]):
-                        fluxes[ii][2] += -1
-
+                        self.fluxes[ii][2] += -1
 
             ii = ii+1
 
         #return changes , Plista
-        return fluxes, Plista
+        return self.fluxes, Plista
 
-    def get_fluxes_stats(fluxes):
+    def get_fluxes_stats(self):
         # CONVENÇÃO PARA OS FLUXOS
         # FLUXES: A -> K ; K -> O ; A -> O; #
         #
-        means = [np.mean(np.transpose(fluxes)[0]),np.mean(np.transpose(fluxes)[1]),np.mean(np.transpose(fluxes)[2])]
-        stds = [np.std(np.transpose(fluxes)[0]),np.std(np.transpose(fluxes)[1]),np.std(np.transpose(fluxes)[2])]
+        means = [np.mean(np.transpose(self.fluxes)[0]),np.mean(np.transpose(self.fluxes)[1]),np.mean(np.transpose(self.fluxes)[2])]
+        stds = [np.std(np.transpose(self.fluxes)[0]),np.std(np.transpose(self.fluxes)[1]),np.std(np.transpose(self.fluxes)[2])]
         #print(means)
         return means, stds
 
     def get_P_stats(Plista):
         #pegamos a media do tamanho de cada conjunto
+
+        for P in Plista:
+            A = np.where(P==1)
+            O = np.where(P==-1)
+            K = np.where(P==0)
+
+
         means = [np.mean(np.transpose(fluxes)[0]),np.mean(np.transpose(fluxes)[1]),np.mean(np.transpose(fluxes)[2])]
         stds = [np.std(np.transpose(fluxes)[0]),np.std(np.transpose(fluxes)[1]),np.std(np.transpose(fluxes)[2])]
         #print(means)
@@ -419,3 +444,24 @@ class ModelStats:
             stds3d.append(s)
         return means3d, stds3d
 
+#Modelo([[1,0,-1,1],[1,0,-1,1]]).teste()
+
+
+#print("\n")
+#Model([1,1,1,1]).teste()
+
+#print("\n")
+#print(Model([1,0,0,1]).h_exp_escalar(0.9))
+
+# print("\n")
+# print(Model([1,0,0,1]).h_exp(0.9))
+
+# uou  = ModelStats('dataId.csv')
+
+# print(uou.headd())
+
+# a, b = uou.get_changes_df_interval(0.9,0.2,100)
+
+# print(a)
+
+# print(b)
