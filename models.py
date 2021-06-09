@@ -131,6 +131,7 @@ class Model:
     def run(self, l , delta, method='exp'): # t é n de enesimo tweet
 
         if method=='exp':
+            #function = self.h_exp
             function = self.h_exp
             scores = function(l)
 
@@ -139,6 +140,25 @@ class Model:
             scores = function()
 
         return self.classifier(scores,delta)
+
+    def classifierlite(self,score,delta):
+
+        if score<-delta: return -1
+        if score>delta: return 1
+        if score<delta and score>-delta: return 0
+ 
+
+    def runlite(self, l , delta, method='exp'): # t é n de enesimo tweet
+
+        if method=='exp':
+            function = self.h_exp_escalar
+            scores = function(l)
+
+        if method=='mean':
+            function = self.h_mean
+            scores = function()
+
+        return self.classifierlite(scores,delta)
 
 class ModelStats: 
     def __init__(self, path, simulate = False):
@@ -169,7 +189,7 @@ class ModelStats:
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
                 statements,id_politico = elem
-                P = Model(statements).run(l, delta,'exp')
+                P = Model(statements).runlite(l, delta,'exp')
                 p_intm.append([P,id_politico])
 
             # funcao
@@ -178,11 +198,17 @@ class ModelStats:
 
             Plista.append([p_intm,t])
 
-            A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
+            A = [x[0] for x in p_intm].count(1)
+
+            O = [x[0] for x in p_intm].count(-1)
+
+            K = [x[0] for x in p_intm].count(0)
+
+            # A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
             #np.where([x[0] for x in P]==1)
-            O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
+            # O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
             #np.where([x[0] for x in P]==-1)
-            K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
+            # K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
             #np.where([x[0] for x in P]==0)
 
             if(ii>0):
@@ -211,7 +237,7 @@ class ModelStats:
         return changes,  Plista
 
 
-    def get_changes_exp_df_interval_L(self, l, delta,lag):
+    def get_changes_df_interval_L(self, l, delta,lag,  method='exp'):
         """
         Counts changes of opinion (changes within each set size) 
         following model dynamic
@@ -231,7 +257,7 @@ class ModelStats:
 
         #tempo = df.time
 
-        tempo = df.time[1::lag]
+        tempo = self.df.time[1::lag]
 
         changes = np.zeros(( len(tempo) , 3 ))
         changesL = np.zeros(( len(tempo) , 3 ))
@@ -250,10 +276,10 @@ class ModelStats:
             #P = Model(statements).run_model(l, delta,'exp')
             
             p_intm = []
-            for elem in crop_statements_until_t(df, t): # de politico em politico
+            for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
                 statements,id_politico = elem
-                P = Model(statements).run_model(l, delta,'exp')
+                P = Model(statements).runlite(l, delta,'exp')
                 p_intm.append([P,id_politico])
 
             # funcao
@@ -262,19 +288,25 @@ class ModelStats:
 
             Plista.append([p_intm,t])
 
-            A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
+            #A = [x[0] for x in p_intm].count(1)
+
+            #O = [x[0] for x in p_intm].count(-1)
+
+            #K = [x[0] for x in p_intm].count(-1)
+
+            #A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
             #np.where([x[0] for x in P]==1)
-            O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
+            #O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
             #np.where([x[0] for x in P]==-1)
-            K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
+            #K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
             #np.where([x[0] for x in P]==0)
 
             #Nnow = len(P)
             #Plista.append(P)
 
-            #A = np.where(P==1)
-            #O = np.where(P==-1)
-            #K = np.where(P==0)
+            A = np.where(P==1)
+            O = np.where(P==-1)
+            K = np.where(P==0)
 
             if(ii>1):
 
@@ -323,7 +355,7 @@ class ModelStats:
         #return changes , Plista
         return changes, changesL , Plista
 
-    def get_fluxes_exp_df_interval(self, l, delta,lag):
+    def get_fluxes_df_interval(self, l, delta,lag, method = 'exp'):
 
         Plista=[]
 
@@ -399,14 +431,14 @@ class ModelStats:
         return means, stds
 
     
-    def study_delta(df,delta,l,lag):
+    def study_delta(self,delta,l,lag):
 
         m = []
         s = []
 
         for d in delta:
 
-            fluxes, Plista = get_fluxes_exp_df_interval(df, d, l, lag)
+            fluxes, Plista = get_fluxes_exp_df_interval(self.df, d, l, lag)
             #print('debug')
             meanss , stdss = get_fluxes_stats(fluxes)
             #print('debug 1')
@@ -444,6 +476,24 @@ class ModelStats:
             stds3d.append(s)
         return means3d, stds3d
 
+    def create_visualization(Plista,t):
+        mapa = np.zeros((18,18))
+        
+        k=0
+        j=0
+        for i in Plista[t]:
+            
+            if(k%18 ==0 and k!=0):
+                k=0
+                j+=1
+            if i==0:
+                mapa[k][j]=0.5
+            else:
+                mapa[k][j]=i
+            k+=1
+        
+        return mapa
+
 #Modelo([[1,0,-1,1],[1,0,-1,1]]).teste()
 
 
@@ -458,10 +508,15 @@ class ModelStats:
 
 # uou  = ModelStats('dataId.csv')
 
-# print(uou.headd())
+# # print(uou.headd())
 
-# a, b = uou.get_changes_df_interval(0.9,0.2,100)
+# changes, Plista = uou.get_changes_df_interval(0.9,0.2,100)
 
-# print(a)
+# # print(a)
 
-# print(b)
+# print(Plista[1])
+
+# changes, changesL, Plista = uou.get_changes_df_interval_L(0.9,0.2,100)
+
+# print(Plista[1])
+# # print(b)
