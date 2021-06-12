@@ -165,6 +165,8 @@ class ModelStats:
 
         if not simulate:
             self.df = pd.read_csv(path)
+            self.df = self.df.sort_values(by=['time'])
+            self.N = len(set(self.df.Id_politico))
 
     def headd(self):
         return self.df.head()
@@ -186,6 +188,7 @@ class ModelStats:
             time.sleep(.1)
             #gets statements
             p_intm = []
+
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
                 statements,id_politico = elem
@@ -202,7 +205,9 @@ class ModelStats:
 
             O = [x[0] for x in p_intm].count(-1)
 
-            K = [x[0] for x in p_intm].count(0)
+            K = [x[0] for x in p_intm].count(0)  
+
+            K = K + self.N - (A + O + K)    # presuncao de neutralidade dos calados
 
             # A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
             #np.where([x[0] for x in P]==1)
@@ -249,6 +254,7 @@ class ModelStats:
         delta - delta parameter
 
         lag - time lag between measurement of system state
+
         """
 
         #changes = np.zeros((T,3))
@@ -282,53 +288,39 @@ class ModelStats:
                 P = Model(statements).runlite(l, delta,'exp')
                 p_intm.append([P,id_politico])
 
+            #  
+
             # funcao
             # se tau=[] retorna 0
             # caso contrario traz tau[-1] (ultimo tweet)
 
             Plista.append([p_intm,t])
 
-            #A = [x[0] for x in p_intm].count(1)
+            A = [x[0] for x in p_intm].count(1)
 
-            #O = [x[0] for x in p_intm].count(-1)
+            O = [x[0] for x in p_intm].count(-1)
 
-            #K = [x[0] for x in p_intm].count(-1)
+            K = [x[0] for x in p_intm].count(-1)
 
-            #A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
-            #np.where([x[0] for x in P]==1)
-            #O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
-            #np.where([x[0] for x in P]==-1)
-            #K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
-            #np.where([x[0] for x in P]==0)
+            
 
-            #Nnow = len(P)
-            #Plista.append(P)
-
-            A = np.where(P==1)
-            O = np.where(P==-1)
-            K = np.where(P==0)
+            #A = np.where(P==1)
+            #O = np.where(P==-1)
+            #K = np.where(P==0)
 
             if(ii>1):
 
-                #Plista[len(Plista)-1] -> esse é o ultimo (P)
+                #P0 = Plista[len(Plista)-2]
 
-                P0 = Plista[len(Plista)-2]
+                #AL = A[0][A[0]<=len(P0)-1]
+                #OL = O[0][O[0]<=len(P0)-1]
+                #KL = K[0][K[0]<=len(P0)-1]
 
-                #A0 = np.where(P0 == 1)
-                #O0 = np.where(P0 == -1)
-                #K0 = np.where(P0 == 0)
+                #[[i in list(np.transpose(Plista[ii-1][0])[1]) for i in list(np.transpose(Plista[ii][0])[1])]]
 
-                AL = A[0][A[0]<=len(P0)-1]
-                OL = O[0][O[0]<=len(P0)-1]
-                KL = K[0][K[0]<=len(P0)-1]
-
-                nA1 = len(A[0])
-                nO1 = len(O[0])
-                nK1 = len(K[0])
-
-                nAL = len(AL)
-                nOL = len(OL)
-                nKL = len(KL)
+                nAL = list(np.transpose(np.array(Plista[-1][0])[[i in list(np.transpose(Plista[-2][0])[1]) for i in list(np.transpose(Plista[-1][0])[1])]])[0]).count(1)
+                nOL = list(np.transpose(np.array(Plista[-1][0])[[i in list(np.transpose(Plista[-2][0])[1]) for i in list(np.transpose(Plista[-1][0])[1])]])[0]).count(-1)
+                nKL = list(np.transpose(np.array(Plista[-1][0])[[i in list(np.transpose(Plista[-2][0])[1]) for i in list(np.transpose(Plista[-1][0])[1])]])[0]).count(0)
 
                 changes[ii][0] = nA1 - nA
                 changes[ii][1] = nO1 - nO
@@ -338,16 +330,16 @@ class ModelStats:
                 changesL[ii][1] = nOL - nO
                 changesL[ii][2] = nKL - nK
 
-                nA = nA1
-                nO = nO1
-                nK = nK1
+                nA = int(A)
+                nO = int(O)
+                nK = int(K)
 
             #elif(ii==0):
             elif(ii<=1):
 
-                nA = len(A[0])
-                nO = len(O[0])
-                nK = len(K[0])
+                nA = int(A)
+                nO = int(O)
+                nK = int(K)
 
             ii=ii+1
 
@@ -379,10 +371,19 @@ class ModelStats:
 
             print(ii, end='\r')
             time.sleep(1)
-            statements = crop_statements_until_t(df, t)
-            P = run_model_exp_def(statements, l, delta)
-            Plista.append(P)
+            #statements = crop_statements_until_t(df, t)
+            #P = run_model_exp_def(statements, l, delta)
+            #Plista.append(P)
 
+            p_intm = []
+            for elem in crop_statements_until_t(self.df, t): # de politico em politico
+
+                statements,id_politico = elem
+                P = Model(statements).runlite(l, delta,'exp')
+                p_intm.append([P,id_politico])
+
+            Plista.append([p_intm,t])
+            
             if(ii>0):
 
                 phi=np.transpose([Plista[ii-1][np.where(Plista[ii-1]-Plista[ii][0:len(Plista[ii-1])] != 0)],Plista[ii][np.where(Plista[ii-1]-Plista[ii][0:len(Plista[ii-1])] != 0)]])
