@@ -5,6 +5,7 @@ import time
 from tests.crop import crop_statements_until_t
 
 class SimulateStatement:
+
     def __init__(self, N, maxtweets):
         self.N = N
         self.maxtweets = maxtweets
@@ -62,7 +63,6 @@ class SimulateStatement:
             statements.append(statementsi)
 
         return statements
-
 
  
 class Model: 
@@ -161,6 +161,7 @@ class Model:
         return self.classifierlite(scores,delta)
 
 class ModelStats: 
+
     def __init__(self, path, simulate = False):
 
         if not simulate:
@@ -495,6 +496,29 @@ class ModelStats:
         
         return mapa
 
+    def organize_politicalparty(Plista,t):
+
+        df = pd.read_csv('DEPUTADOS_FINAL.csv')
+
+        IdtoParty = {i:df[df.Id_politico == i]['Partido'] for i in df.Id_politico} 
+
+        parties = [IdtoParty[i][0] for i in np.transpose(Plista[t][0])[1]]
+
+        parties_participation = { i:parties.count(i) for i in np.unique(parties) }
+
+        partytoopinions= {}
+
+        for [i,j] in Plista[t][0]:
+            #print(i,j)
+            party = IdtoParty[j][0]
+            if party in partytoopinions.keys():
+                partytoopinions[party] = partytoopinions[party] + [i]
+            else:
+                partytoopinions[party] = [i]
+
+        return parties_participation, partytoopinions 
+
+
 #Modelo([[1,0,-1,1],[1,0,-1,1]]).teste()
 
 
@@ -520,4 +544,4 @@ class ModelStats:
 # changes, changesL, Plista = uou.get_changes_df_interval_L(0.9,0.2,100)
 
 # print(Plista[1])
-# # print(b)
+# print(b
