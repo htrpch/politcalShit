@@ -496,13 +496,15 @@ class ModelStats:
         
         return mapa
 
-    def organize_politicalparty(Plista,t):
+    def organize_politicalparty(self, Plista, t):
 
         df = pd.read_csv('DEPUTADOS_FINAL.csv')
 
-        IdtoParty = {i:df[df.Id_politico == i]['Partido'] for i in df.Id_politico} 
+        IdtoParty = {i:df[df.Id_politico == i]['Partido'].values[0] for i in df.Id_politico} 
 
-        parties = [IdtoParty[i][0] for i in np.transpose(Plista[t][0])[1]]
+        #print(IdtoParty)
+
+        parties = [IdtoParty[i] for i in np.transpose(Plista[t][0])[1]]
 
         parties_participation = { i:parties.count(i) for i in np.unique(parties) }
 
@@ -510,13 +512,17 @@ class ModelStats:
 
         for [i,j] in Plista[t][0]:
             #print(i,j)
-            party = IdtoParty[j][0]
+            party = IdtoParty[j]
             if party in partytoopinions.keys():
                 partytoopinions[party] = partytoopinions[party] + [i]
             else:
                 partytoopinions[party] = [i]
 
         return parties_participation, partytoopinions 
+
+ #   def visualize_parties_evolution(self):
+
+
 
 
 #Modelo([[1,0,-1,1],[1,0,-1,1]]).teste()
