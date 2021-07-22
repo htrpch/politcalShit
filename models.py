@@ -518,9 +518,28 @@ class ModelStats:
             else:
                 partytoopinions[party] = [i]
 
-        return parties_participation, partytoopinions 
+        totalpartyopinion = {}
 
- #   def visualize_parties_evolution(self):
+        for party in partytoopinions.keys():
+            p_A = partytoopinions[party].count(1)
+            p_K = partytoopinions[party].count(0)
+            p_O = partytoopinions[party].count(-1)
+
+            totalpartyopinion[party] = {1: p_A, 0: p_K, -1: p_O}
+
+        return parties_participation, partytoopinions, totalpartyopinion
+
+    def visualize_parties_evolution(self, Plista):  
+
+        parties_opinion_evolution = []
+
+        for t in len(Plista):
+            parties_participation, partytoopinions, totalpartyopinion = self.organize_politicalparty( Plista, t)
+
+            parties_opinion_evolution = parties_opinion_evolution + [totalpartyopinion]
+
+        return parties_opinion_evolution
+
 
 
 
