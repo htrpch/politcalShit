@@ -168,12 +168,114 @@ class ModelStats:
             self.df = pd.read_csv(path)
             self.df = self.df.sort_values(by=['time'])
             self.N = len(set(self.df.Id_politico))
+            self.deputados = pd.read_csv('DEPUTADOS_FINAL.csv')
 
     def headd(self):
         return self.df.head()
     
     def get_changes_df_interval(self, l, delta, lag, method='exp'):
-    
+        """
+        Counts changes of opinion in approval sets
+        following model dynamic
+
+        Args: 
+        
+        l - lambda parameter
+
+        delta - delta parameter
+
+        lag - time lag between measurement of system state
+
+        """
+
+
+        Plista = []
+        total_sets = []
+
+        tempo = self.df.time[1::lag]
+        changes = np.zeros(( len(tempo) , 3 ))
+
+        ii = 0
+
+        Nantes = 0
+
+        for t in tempo:
+
+            print(ii, end='\r')
+            time.sleep(.1)
+            #gets statements
+            p_intm = []
+
+            for elem in crop_statements_until_t(self.df, t): # de politico em politico
+
+                statements,id_politico = elem
+                P = Model(statements).runlite(l, delta,'exp')
+                p_intm.append([P,id_politico])
+
+            # funcao
+            # se tau=[] retorna 0
+            # caso contrario traz tau[-1] (ultimo tweet)
+
+            Plista.append([p_intm,t])
+
+            A = [x[0] for x in p_intm].count(1)
+
+            O = [x[0] for x in p_intm].count(-1)
+
+            K = [x[0] for x in p_intm].count(0)  
+
+            K = K + self.deputados.NOME.count() - (A + O + K)     # presuncao de neutralidade dos calados
+
+            total_sets = total_sets + [[A,O,K]]
+
+            # A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
+            #np.where([x[0] for x in P]==1)
+            # O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
+            #np.where([x[0] for x in P]==-1)
+            # K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
+            #np.where([x[0] for x in P]==0)
+
+            if(ii>0):
+
+                nA1 = int(A)
+                nO1 = int(O)
+                nK1 = int(K)
+
+                changes[ii][0] = nA1 - nA
+                changes[ii][1] = nO1 - nO
+                changes[ii][2] = nK1 - nK
+
+                nA = nA1
+                nO = nO1
+                nK = nK1
+
+            elif(ii==0):
+
+                nA = int(A)
+                nO = int(O)
+                nK = int(K)
+
+            ii=ii+1
+
+        self.time = [Plista[t][1] for t in range(len(Plista))]
+
+        return changes,  Plista, total_sets
+
+    def get_changes_df_interval_start_undecided(self, l, delta, lag, method='exp'):
+        """
+        Counts changes of opinion in approval sets
+        following model dynamic
+
+        Args: 
+        
+        l - lambda parameter
+
+        delta - delta parameter
+
+        lag - time lag between measurement of system state
+
+        """
+
         Plista=[]
 
         tempo = self.df.time[1::lag]
@@ -208,7 +310,7 @@ class ModelStats:
 
             K = [x[0] for x in p_intm].count(0)  
 
-            K = K + self.N - (A + O + K)    # presuncao de neutralidade dos calados
+            K = K + self.deputados.NOME.count() - (A + O + K)    # presuncao de neutralidade dos calados
 
             # A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
             #np.where([x[0] for x in P]==1)
@@ -498,7 +600,9 @@ class ModelStats:
 
     def organize_politicalparty(self, Plista, t):
 
-        df = pd.read_csv('DEPUTADOS_FINAL.csv')
+        #df = pd.read_csv('DEPUTADOS_FINAL.csv')
+
+        df = self.deputados
 
         IdtoParty = {i:df[df.Id_politico == i]['Partido'].values[0] for i in df.Id_politico} 
 
@@ -520,9 +624,12 @@ class ModelStats:
 
         totalpartyopinion = {}
 
+        for party in np.unique(self.deputados.Partido):
+            totalpartyopinion[party] = {1: 0, 0: + self.deputados.Partido.value_counts()[party], -1: 0}
+
         for party in partytoopinions.keys():
             p_A = partytoopinions[party].count(1)
-            p_K = partytoopinions[party].count(0)
+            p_K = partytoopinions[party].count(0) + self.deputados.Partido.value_counts()[party] - partytoopinions[party].count(1) - partytoopinions[party].count(-1)
             p_O = partytoopinions[party].count(-1)
 
             totalpartyopinion[party] = {1: p_A, 0: p_K, -1: p_O}
@@ -531,14 +638,26 @@ class ModelStats:
 
     def visualize_parties_evolution(self, Plista):  
 
-        parties_opinion_evolution = []
+        self.parties_opinion_evolution = []
 
-        for t in len(Plista):
+        for t in range(len(Plista)):
+
             parties_participation, partytoopinions, totalpartyopinion = self.organize_politicalparty( Plista, t)
 
-            parties_opinion_evolution = parties_opinion_evolution + [totalpartyopinion]
+            self.parties_opinion_evolution = self.parties_opinion_evolution + [totalpartyopinion]
 
-        return parties_opinion_evolution
+        return self.parties_opinion_evolution
+
+    def serie_temporal_partido(self, party):
+
+        serie_A =  [ self.parties_opinion_evolution[i][party][1] for i in range(len(self.parties_opinion_evolution)) ]
+        serie_K =  [ self.parties_opinion_evolution[i][party][0] for i in range(len(self.parties_opinion_evolution)) ]
+        serie_O =  [ self.parties_opinion_evolution[i][party][-1] for i in range(len(self.parties_opinion_evolution))]
+
+        return serie_A, serie_K, serie_O
+
+
+
 
 
 
