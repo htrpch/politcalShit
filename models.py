@@ -10,7 +10,6 @@ class SimulateStatement:
         self.N = N
         self.maxtweets = maxtweets
     
-    
     def np_continuous(self):
         """
         cria tweets um vetor com NxMaxTweets
