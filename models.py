@@ -455,7 +455,7 @@ class ModelStats:
 
         #philista=[]
 
-        tempo = df.time[1::lag]
+        tempo = self.df.time[1::lag]
 
         self.fluxes = np.zeros(( len(tempo) , 3 ))
 
