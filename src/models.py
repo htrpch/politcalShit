@@ -2,7 +2,8 @@
 import numpy as np
 import pandas as pd
 import time
-from src.crop import crop_statements_until_t
+from tqdm import tqdm
+from crop import crop_statements_until_t
 
 class SimulateStatement:
 
@@ -161,13 +162,13 @@ class Model:
 
 class ModelStats: 
 
-    def __init__(self, path, simulate = False):
+    def __init__(self, path, deputados_path, simulate = False):
 
         if not simulate:
             self.df = pd.read_csv(path)
             self.df = self.df.sort_values(by=['time'])
             self.N = len(set(self.df.Id_politico))
-            self.deputados = pd.read_csv('DEPUTADOS_FINAL.csv')
+            self.deputados = pd.read_csv(deputados_path)
 
     def headd(self):
         return self.df.head()
@@ -198,11 +199,12 @@ class ModelStats:
 
         Nantes = 0
 
-        for t in tempo:
+        for t in tqdm(tempo):
 
-            print(ii, end='\r')
             time.sleep(.1)
+
             #gets statements
+            
             p_intm = []
 
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
