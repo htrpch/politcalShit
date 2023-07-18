@@ -2,7 +2,7 @@
 import numpy as np
 import pandas as pd
 import time
-from tests.crop import crop_statements_until_t
+from src.crop import crop_statements_until_t
 
 class SimulateStatement:
 

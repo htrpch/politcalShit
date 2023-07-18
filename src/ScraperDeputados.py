@@ -14,7 +14,7 @@ from time import sleep
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 
-def ScrapaDeputados(deputados,username, senha):
+def ScrapaDeputados2018(deputados,username, senha):
     
     deputadas = []
     for i in deputados.Nome:
