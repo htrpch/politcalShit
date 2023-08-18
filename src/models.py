@@ -475,6 +475,7 @@ class ModelStats:
 
             print(ii, end='\r')
             time.sleep(1)
+
             #statements = crop_statements_until_t(df, t)
             #P = run_model_exp_def(statements, l, delta)
             #Plista.append(P)
@@ -641,7 +642,7 @@ class ModelStats:
 
         self.parties_opinion_evolution = []
 
-        for t in range(len(Plista)):
+        for t in tqdm(range(len(Plista))):
 
             parties_participation, partytoopinions, totalpartyopinion = self.organize_politicalparty( Plista, t)
 
