@@ -4,6 +4,16 @@ import pandas as pd
 import time
 from tqdm import tqdm
 from crop import crop_statements_until_t
+from dataclasses import dataclass
+
+
+#PLista deve ser substituido por essa classe
+@dataclass
+class PoliticiansOpinionInTime:
+    """Class for keeping track of politician opinion evolution"""
+    list: str
+    datetime: int = 0
+
 
 class SimulateStatement:
 
@@ -455,6 +465,8 @@ class ModelStats:
 
         Plista=[]
 
+        Plista_flux = []
+
         #philista=[]
 
         tempo = self.df.time[1::lag]
@@ -467,13 +479,10 @@ class ModelStats:
         #
         #
 
-        ii = 0
-
         Nantes = 0
 
-        for t in tempo:
+        for ii, t in enumerate(tqdm(tempo)):
 
-            print(ii, end='\r')
             time.sleep(1)
 
             #statements = crop_statements_until_t(df, t)
@@ -481,34 +490,53 @@ class ModelStats:
             #Plista.append(P)
 
             p_intm = []
+
+            all_p = []
+
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
-                statements,id_politico = elem
+                statements, id_politico = elem
                 P = Model(statements).runlite(l, delta,'exp')
-                p_intm.append([P,id_politico])
+                p_intm.append([P, id_politico])
+                all_p.append(P)
 
-            Plista.append([p_intm,t])
+            Plista.append([p_intm, t])
+
+            Plista_flux.append(all_p)
             
             if(ii>0):
 
-                phi=np.transpose([Plista[ii-1][np.where(Plista[ii-1]-Plista[ii][0:len(Plista[ii-1])] != 0)],Plista[ii][np.where(Plista[ii-1]-Plista[ii][0:len(Plista[ii-1])] != 0)]])
+                changing_opinions = pd.Series(Plista_flux[ii-1]) - pd.Series(Plista_flux[ii][:len(Plista_flux[ii-1])])
 
-                for i in phi:
-                    #print(i)
-                    if (i.tolist() == [ 0. , 1.]):
-                        self.fluxes[ii][0] += -1
-                    if (i.tolist() == [ 1. , 0.]):
-                        self.fluxes[ii][0] += 1
-                    if (i.tolist() == [ 0., -1.]):
-                        self.fluxes[ii][1] += 1
-                    if (i.tolist() == [ -1. , 0.]):
-                        self.fluxes[ii][1] += -1
-                    if (i.tolist() == [ 1. ,-1.]):
-                        self.fluxes[ii][2] += 1
-                    if (i.tolist() == [ -1., 1.]):
-                        self.fluxes[ii][2] += -1
+                non_zero_changing_opinions = np.where(changing_opinions != 0)[0]
 
-            ii = ii+1
+                if len(non_zero_changing_opinions) >0 :
+
+                    for a in non_zero_changing_opinions :  print(a)
+
+                    print(np.array(Plista_flux[ii-1])[non_zero_changing_opinions])
+                    print(np.array(Plista_flux[ii])[non_zero_changing_opinions])
+
+                    po = np.array(Plista_flux[ii-1])[non_zero_changing_opinions]
+                    pf = np.array(Plista_flux[ii])[non_zero_changing_opinions]
+
+                    phi = np.transpose([po,pf])
+
+                    for i in phi:
+                        #print(i)
+                        if (i.tolist() == [ 0. , 1.]):
+                            self.fluxes[ii][0] += -1
+                        if (i.tolist() == [ 1. , 0.]):
+                            self.fluxes[ii][0] += 1
+                        if (i.tolist() == [ 0., -1.]):
+                            self.fluxes[ii][1] += 1
+                        if (i.tolist() == [ -1. , 0.]):
+                            self.fluxes[ii][1] += -1
+                        if (i.tolist() == [ 1. ,-1.]):
+                            self.fluxes[ii][2] += 1
+                        if (i.tolist() == [ -1., 1.]):
+                            self.fluxes[ii][2] += -1
+
 
         #return changes , Plista
         return self.fluxes, Plista
