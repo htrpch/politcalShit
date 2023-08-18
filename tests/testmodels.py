@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from crop import crop_statements_until_t
-from models import SimulateStatement, Model, ModelStats
+from src.models import SimulateStatement, Model, ModelStats
 
 class TestModels(unittest.TestCase):
 
