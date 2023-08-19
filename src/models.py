@@ -463,7 +463,7 @@ class ModelStats:
 
     def get_fluxes_df_interval(self, l, delta,lag, method = 'exp'):
 
-        Plista=[]
+        Plista = []
 
         Plista_flux = []
 
@@ -484,10 +484,6 @@ class ModelStats:
         for ii, t in enumerate(tqdm(tempo)):
 
             time.sleep(1)
-
-            #statements = crop_statements_until_t(df, t)
-            #P = run_model_exp_def(statements, l, delta)
-            #Plista.append(P)
 
             p_intm = []
 
@@ -511,11 +507,6 @@ class ModelStats:
                 non_zero_changing_opinions = np.where(changing_opinions != 0)[0]
 
                 if len(non_zero_changing_opinions) >0 :
-
-                    for a in non_zero_changing_opinions :  print(a)
-
-                    print(np.array(Plista_flux[ii-1])[non_zero_changing_opinions])
-                    print(np.array(Plista_flux[ii])[non_zero_changing_opinions])
 
                     po = np.array(Plista_flux[ii-1])[non_zero_changing_opinions]
                     pf = np.array(Plista_flux[ii])[non_zero_changing_opinions]
