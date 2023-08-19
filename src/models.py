@@ -8,8 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 
-#PLista deve ser substituido por essa classe
-
+#PLista deve ser substituido por lista de objetos PoliticiansOpinionInTime
 
 @dataclass
 class PoliticianOpinion:
