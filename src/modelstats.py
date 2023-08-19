@@ -137,12 +137,6 @@ class ModelStats:
             K = K + self.deputados.NOME.count() - (A + O + K)     # presuncao de neutralidade dos calados
             total_sets = total_sets + [[A,O,K]]
 
-            # A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
-            #np.where([x[0] for x in P]==1)
-            # O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
-            #np.where([x[0] for x in P]==-1)
-            # K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
-            #np.where([x[0] for x in P]==0)
 
             if(ii>0):
 
@@ -207,9 +201,6 @@ class ModelStats:
                 P = Model(statements).runlite(l, delta,'exp')
                 p_intm.append([P,id_politico])
 
-            # funcao
-            # se tau=[] retorna 0
-            # caso contrario traz tau[-1] (ultimo tweet)
 
             Plista.append([p_intm,t])
 
@@ -220,13 +211,6 @@ class ModelStats:
             K = [x[0] for x in p_intm].count(0)  
 
             K = K + self.deputados.NOME.count() - (A + O + K)   # presuncao de neutralidade dos calados
-
-            # A = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(1)
-            #np.where([x[0] for x in P]==1)
-            # O = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(-1)
-            #np.where([x[0] for x in P]==-1)
-            # K = [Model.lastOr0(y) for y in [x[0] for x in p_intm]].count(0)
-            #np.where([x[0] for x in P]==0)
 
             if(ii>0):
 
@@ -250,7 +234,6 @@ class ModelStats:
 
             ii=ii+1
 
-        #return changes , Plista
         return changes,  Plista
 
 
@@ -360,23 +343,18 @@ class ModelStats:
         return changes, changesL , Plista
 
     def get_fluxes_df_interval(self, l, delta,lag, method = 'exp'):
+        """
+        CONVENÇÃO PARA OS FLUXOS
+        FLUXES: A -> K ; K -> O ; A -> O; #
+
+        """
 
         Plista = []
-
         Plista_flux = []
-
-        #philista=[]
 
         tempo = self.df.time[1::lag]
 
         self.fluxes = np.zeros(( len(tempo) , 3 ))
-
-        # CONVENÇÃO PARA OS FLUXOS
-        #
-        # FLUXES: A -> K ; K -> O ; A -> O; #
-        #
-
-        Nantes = 0
 
         for ii, t in enumerate(tqdm(tempo)):
 
@@ -421,7 +399,7 @@ class ModelStats:
                         if (i.tolist() == [ -1., 1.]):
                             self.fluxes[ii][2] += -1
 
-        return self.fluxes, Plista
+        return self
 
     def get_fluxes_stats(self):
         # CONVENÇÃO PARA OS FLUXOS
