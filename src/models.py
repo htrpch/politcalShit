@@ -477,16 +477,13 @@ class ModelStats:
         #
         # FLUXES: A -> K ; K -> O ; A -> O; #
         #
-        #
 
         Nantes = 0
 
         for ii, t in enumerate(tqdm(tempo)):
 
             time.sleep(1)
-
             p_intm = []
-
             all_p = []
 
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
@@ -497,16 +494,14 @@ class ModelStats:
                 all_p.append(P)
 
             Plista.append([p_intm, t])
-
             Plista_flux.append(all_p)
             
             if(ii>0):
 
                 changing_opinions = pd.Series(Plista_flux[ii-1]) - pd.Series(Plista_flux[ii][:len(Plista_flux[ii-1])])
-
                 non_zero_changing_opinions = np.where(changing_opinions != 0)[0]
 
-                if len(non_zero_changing_opinions) >0 :
+                if len(non_zero_changing_opinions) > 0 :
 
                     po = np.array(Plista_flux[ii-1])[non_zero_changing_opinions]
                     pf = np.array(Plista_flux[ii])[non_zero_changing_opinions]
@@ -514,7 +509,7 @@ class ModelStats:
                     phi = np.transpose([po,pf])
 
                     for i in phi:
-                        #print(i)
+
                         if (i.tolist() == [ 0. , 1.]):
                             self.fluxes[ii][0] += -1
                         if (i.tolist() == [ 1. , 0.]):
@@ -528,8 +523,6 @@ class ModelStats:
                         if (i.tolist() == [ -1., 1.]):
                             self.fluxes[ii][2] += -1
 
-
-        #return changes , Plista
         return self.fluxes, Plista
 
     def get_fluxes_stats(self):
