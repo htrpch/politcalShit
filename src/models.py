@@ -7,7 +7,6 @@ from crop import crop_statements_until_t
 from dataclasses import dataclass
 from datetime import datetime
 
-
 #PLista deve ser substituido por lista de objetos PoliticiansOpinionInTime
 
 @dataclass

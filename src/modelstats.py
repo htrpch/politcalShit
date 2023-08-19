@@ -45,7 +45,6 @@ class ModelStats:
         for ii, t in tqdm(enumerate(tempo)):
 
             time.sleep(.1)
-            
             politician_opinion_list = []
 
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
@@ -89,6 +88,8 @@ class ModelStats:
             ii=ii+1
 
         self.time = [x.time for x in politicians_opinions_until_t]
+        self.changes = changes
+        self.politicians_opinions_until_t = politicians_opinions_until_t
 
         return self
     
@@ -237,7 +238,7 @@ class ModelStats:
         return changes,  Plista
 
 
-    def get_changes_df_interval_L(self, l, delta,lag,  method='exp'):
+    def get_changes_df_interval_L(self, l, delta, lag,  method='exp'):
         """
         Counts changes of opinion (changes within each set size) 
         following model dynamic
@@ -271,23 +272,14 @@ class ModelStats:
 
             print(ii, end='\r')
             time.sleep(1)
-
-            #gets statements
-            #P = run_model_exp_def(statements, l, delta)
-            #P = Model(statements).run_model(l, delta,'exp')
             
             p_intm = []
+
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
                 statements,id_politico = elem
                 P = Model(statements).runlite(l, delta,'exp')
                 p_intm.append([P,id_politico])
-
-            #  
-
-            # funcao
-            # se tau=[] retorna 0
-            # caso contrario traz tau[-1] (ultimo tweet)
 
             Plista.append([p_intm,t])
 
@@ -297,21 +289,8 @@ class ModelStats:
 
             K = [x[0] for x in p_intm].count(-1)
 
-            
-
-            #A = np.where(P==1)
-            #O = np.where(P==-1)
-            #K = np.where(P==0)
 
             if(ii>1):
-
-                #P0 = Plista[len(Plista)-2]
-
-                #AL = A[0][A[0]<=len(P0)-1]
-                #OL = O[0][O[0]<=len(P0)-1]
-                #KL = K[0][K[0]<=len(P0)-1]
-
-                #[[i in list(np.transpose(Plista[ii-1][0])[1]) for i in list(np.transpose(Plista[ii][0])[1])]]
 
                 nAL = list(np.transpose(np.array(Plista[-1][0])[[i in list(np.transpose(Plista[-2][0])[1]) for i in list(np.transpose(Plista[-1][0])[1])]])[0]).count(1)
                 nOL = list(np.transpose(np.array(Plista[-1][0])[[i in list(np.transpose(Plista[-2][0])[1]) for i in list(np.transpose(Plista[-1][0])[1])]])[0]).count(-1)
@@ -346,14 +325,12 @@ class ModelStats:
         """
         CONVENÇÃO PARA OS FLUXOS
         FLUXES: A -> K ; K -> O ; A -> O; #
-
         """
 
         Plista = []
         Plista_flux = []
 
         tempo = self.df.time[1::lag]
-
         self.fluxes = np.zeros(( len(tempo) , 3 ))
 
         for ii, t in enumerate(tqdm(tempo)):
