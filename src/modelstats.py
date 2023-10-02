@@ -19,7 +19,7 @@ class ModelStats:
             self.N = len(set(self.df.Id_politico))
             self.deputados = pd.read_csv(deputados_path)
 
-    def headd(self):
+    def head(self):
         return self.df.head()
     
     def get_changes(self, l, delta, lag, method='exp'):
@@ -93,7 +93,7 @@ class ModelStats:
 
         return self
     
-    def get_changes_df_interval(self, l, delta, lag, method='exp'):
+    def get_changes_df_interval(self, l, delta, lag, method ='exp'):
         """
         Counts changes of opinion in approval sets
         following model dynamic
@@ -387,7 +387,7 @@ class ModelStats:
         #print(means)
         return means, stds
 
-    def get_P_stats(Plista):
+    def get_P_stats(self, Plista):
         #pegamos a media do tamanho de cada conjunto
 
         for P in Plista:
@@ -396,8 +396,8 @@ class ModelStats:
             K = np.where(P==0)
 
 
-        means = [np.mean(np.transpose(fluxes)[0]),np.mean(np.transpose(fluxes)[1]),np.mean(np.transpose(fluxes)[2])]
-        stds = [np.std(np.transpose(fluxes)[0]),np.std(np.transpose(fluxes)[1]),np.std(np.transpose(fluxes)[2])]
+        means = [np.mean(np.transpose(self.fluxes)[0]),np.mean(np.transpose(self.fluxes)[1]),np.mean(np.transpose(self.fluxes)[2])]
+        stds = [np.std(np.transpose(self.fluxes)[0]),np.std(np.transpose(self.fluxes)[1]),np.std(np.transpose(self.fluxes)[2])]
         #print(means)
         return means, stds
 
@@ -409,40 +409,37 @@ class ModelStats:
 
         for d in delta:
 
-            fluxes, Plista = get_fluxes_exp_df_interval(self.df, d, l, lag)
+            fluxes, Plista = self.get_fluxes_df_interval(self.df, d, l, lag)
             #print('debug')
-            meanss , stdss = get_fluxes_stats(fluxes)
+            meanss , stdss = self.get_fluxes_stats(fluxes)
             #print('debug 1')
             m.append(meanss)
             s.append(stdss)
         
         return m, s
 
-    def study_l(df,delta,lambd,lag):
+    def study_l(self, df, delta, lambd, lag):
 
         m = []
         s = []
 
         for l in lambd:
 
-            fluxes, Plista = get_fluxes_exp_df_interval(df, delta, l, lag)
-            #print('debug')
-            means , stds = get_fluxes_stats(fluxes)
-            #print('debug 1')
+            fluxes, Plista = self.get_fluxes_df_interval(df, delta, l, lag)
+            means , stds = self.get_fluxes_stats(fluxes)
             m.append(means)
             s.append(stds)
         
-        #print('xegou')
         return m, s
 
-    def map_l_delta(df,delta,lambd,lag):
+    def map_l_delta(self, df,delta,lambd,lag):
 
         means3d=[]
         stds3d=[]
 
         for d in delta:
             print(d)
-            m , s = study_l(df,d,lambd,lag)
+            m , s = self.study_l(df,d,lambd,lag)
             means3d.append(m)
             stds3d.append(s)
         return means3d, stds3d

@@ -169,3 +169,15 @@ class Model:
             scores = function()
 
         return self.classifierlite(scores,delta)
+    
+    def runfull(self, l , delta, method='exp'): # t é n de enesimo tweet
+
+        if method=='exp':
+            function = self.h_exp_escalar
+            scores = function(l)
+
+        if method=='mean':
+            function = self.h_mean
+            scores = function()
+
+        return self.classifierlite(scores,delta)
