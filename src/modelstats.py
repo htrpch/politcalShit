@@ -9,6 +9,19 @@ from dataclasses import dataclass
 from models import SimulateStatement, Model, PoliticianOpinion, PoliticiansOpinionInTime
 
 
+@dataclass
+class OpinionHistogram:
+    """Class for identifying a single politician opinion"""
+    bins: list[int]
+    opinion: list[int] 
+
+@dataclass
+class ScoreHistogram:
+    """Class for identifying a single politician opinion"""
+    politician_id: list[int]
+    opinion: list[int]
+
+
 class ModelStats: 
 
     def __init__(self, path, deputados_path, simulate = False):
@@ -20,6 +33,19 @@ class ModelStats:
             self.deputados = pd.read_csv(deputados_path)
 
     def head(self):
+        return self.df.head()
+    
+    def get_statement_histogram(self):
+
+        time_ = self.df.time
+        crop_statements_until_t(self.df, time_[-1])
+
+
+        for elem in crop_statements_until_t(self.df, t): # de politico em politico
+            statements, id_politico = elem
+            np.histogram(statements)
+
+
         return self.df.head()
     
     def get_changes(self, l, delta, lag, method='exp'):
@@ -49,7 +75,7 @@ class ModelStats:
 
             for elem in crop_statements_until_t(self.df, t): # de politico em politico
 
-                statements,id_politico = elem
+                statements, id_politico = elem
                 P = Model(statements).runlite(l, delta,'exp')
                 politician_opinion = PoliticianOpinion(id_politico, P)
                 politician_opinion_list.append(politician_opinion)
