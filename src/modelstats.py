@@ -35,16 +35,36 @@ class ModelStats:
     def head(self):
         return self.df.head()
     
-    def get_statement_histogram(self):
+    def get_score_histogram(self, l, delta, lag, method = 'exp'):
 
-        time_ = self.df.time
-        crop_statements_until_t(self.df, time_[-1])
+        times = self.df.time[::lag]
+        politician_opinion_list = []
+        from_time_to_politician_opinion_list = {}
+        from_politician_to_opinion_list = {}
 
+        id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, time_)] 
 
-        for elem in crop_statements_until_t(self.df, t): # de politico em politico
-            statements, id_politico = elem
-            np.histogram(statements)
+        for time_ in self.df.time:
+            for elem in crop_statements_until_t(self.df, time_): # de politico em politico
 
+                statements, id_politico = elem
+                P = Model(statements).runlite(l, delta,'exp')
+                politician_opinion = PoliticianOpinion(id_politico, P)
+                politician_opinion_list.append(politician_opinion)
+                statements, id_politico = elem
+
+            politicians_opinion_in_time = PoliticiansOpinionInTime(politician_opinion_list, time_)
+            from_time_to_politician_opinion_list[time_] = politicians_opinion_in_time
+        
+        from_id_politico_to_opinion_list = {}
+
+        for id_politico in id_politicos:
+            opinion_in_that_time_list = []
+            for time_ in self.df.time:
+                opinion_in_that_time = [i for i in from_time_to_politician_opinion_list[time_] if i.politician_id == id_politico][0]
+                opinion_in_that_time_list += [opinion_in_that_time] 
+            from_id_politico_to_opinion_list[id_politico] = opinion_in_that_time_list 
+            values, counts = np.histogram(opinion_in_that_time_list)
 
         return self.df.head()
     
