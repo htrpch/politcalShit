@@ -137,6 +137,23 @@ class Model:
                 h.append(0)
 
         return h
+    
+    def dynamic_classifier(self,scores,delta_0,distance_from_reckoning,time_of_reckoning):
+        
+        h=[]
+
+        delta = (distance_from_reckoning/time_of_reckoning)*delta_0
+
+        for i in range(len(scores)):
+            obj = scores[i]
+            if obj<-delta:
+                h.append(-1)
+            if obj>delta:
+                h.append(1)
+            if obj<delta and obj>-delta:
+                h.append(0)
+
+        return h
 
     def run(self, l , delta, method='exp'): # t é n de enesimo tweet
 
@@ -159,6 +176,18 @@ class Model:
  
 
     def runlite(self, l , delta, method='exp'): # t é n de enesimo tweet
+
+        if method=='exp':
+            function = self.h_exp_escalar
+            scores = function(l)
+
+        if method=='mean':
+            function = self.h_mean
+            scores = function()
+
+        return self.classifierlite(scores,delta)
+    
+    def runlite_dynamic(self, l , delta,distance_from_reckoning,time_of_reckoning, method='exp'): # t é n de enesimo tweet
 
         if method=='exp':
             function = self.h_exp_escalar
