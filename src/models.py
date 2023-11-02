@@ -125,7 +125,7 @@ class Model:
         return [np.mean(self.tau[:i]) for i in range(len(self.tau))]
 
 
-    def classifier(self,scores,delta):
+    def classifier(self, scores, delta):
         h=[]
         for i in range(len(scores)):
             obj = scores[i]
@@ -138,7 +138,7 @@ class Model:
 
         return h
     
-    def dynamic_classifier(self,scores,delta_0,distance_from_reckoning,time_of_reckoning):
+    def dynamic_classifier(self, scores, delta_0, distance_from_reckoning, time_of_reckoning):
         
         h=[]
 
@@ -187,7 +187,7 @@ class Model:
 
         return self.classifierlite(scores,delta)
     
-    def runlite_dynamic(self, l , delta,distance_from_reckoning,time_of_reckoning, method='exp'): # t é n de enesimo tweet
+    def runlite_dynamic(self, l , delta, distance_from_reckoning,time_of_reckoning, method='exp'): # t é n de enesimo tweet
 
         if method=='exp':
             function = self.h_exp_escalar
