@@ -16,9 +16,9 @@ class PoliticianOpinion:
     opinion: int 
 
 @dataclass
-class PoliticiansOpinionInTime:
+class PoliticianOpinionInTime:
     """Class for keeping track of politician opinion evolution"""
-    politicians_opinions: list[PoliticianOpinion]
+    politician_opinions: list[PoliticianOpinion]
     datetime: datetime
 
 
