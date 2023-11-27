@@ -5,6 +5,7 @@ import time
 from tqdm import tqdm
 from crop import crop_statements_until_t
 from dataclasses import dataclass
+from typing import List
 
 from models import SimulateStatement, Model, PoliticianOpinion, PoliticiansOpinionInTime
 
@@ -16,6 +17,11 @@ class PoliticianOpinionHistogram:
     opinions: list[int]
     counts: list[int] 
 
+def days_from_td(delta):
+    total_seconds = delta.total_seconds()
+    days = total_seconds / (24 * 3600)  
+    return days
+
 
 class ModelStats: 
 
@@ -24,14 +30,65 @@ class ModelStats:
         if not simulate:
             self.df = pd.read_csv(path)
             self.df = self.df.sort_values(by=['time'])
+            self.df.time = pd.to_datetime(self. df.time)
+
             self.N = len(set(self.df.Id_politico))
             self.deputados = pd.read_csv(deputados_path)
 
     def head(self):
         return self.df.head()
+    
+    def get_politicians(self):
+        ids = list(self.df['Id_politico'].unique())
+        return ids
+    
+    def get_rates(self):
+        ids = self.get_politicians()
+        from_id_to_df = {id : self.df[self.df['Id_politico'] == id] for id in ids}
+        from_id_to_rate = {id: days_from_td(np.mean(from_id_to_df[id].time.diff())) for id in ids}
+        return from_id_to_rate
+    
+    def get_window_size_fror_probability_estimation(self, days_to_reckoning):
+        from_id_to_rate = self.get_rates()
+        
+        return from_id_to_rate
 
+    def count_lags(start_datetime, end_datetime, lagsize):
+        current_datetime = start_datetime
+        count = 0
+        while current_datetime < end_datetime:
+            current_datetime += lagsize
+            count += 1
+        return count
+    
+    def get_politician_trajectories(opinions_in_time: List[PoliticiansOpinionInTime], politician_id: int):
+        """
+        Get all different trajectories of opinions for a single politician.
 
-    def get_opinion_trajectory_histogram(self, l, delta, lag, method = 'exp'):
+        Parameters:
+        - opinions_in_time: List of PoliticiansOpinionInTime instances.
+        - politician_id: integer associated with politician.
+
+        Returns:
+        - A list of trajectories for the specified politician.
+        """
+        politician_trajectories = []
+
+        # Iterate through the list of opinions_in_time
+        for opinion_in_time in opinions_in_time:
+            datetime_point = opinion_in_time.datetime
+
+            # Find the politician's opinion at this datetime_point
+            politician_opinion = next((opinion.opinion_score for opinion in opinion_in_time.politician_opinions
+                                    if opinion.politician_id == politician_id), None)
+
+            if politician_opinion is not None:
+                # Append the datetime_point and opinion to the trajectories
+                politician_trajectories.append((datetime_point, politician_opinion))
+
+        return politician_trajectories
+
+    def get_opinion_trajectory_histogram(self, l, delta, lag, lags_from_reckoning, method = 'exp'):
 
         times = self.df.time[::lag]
         politician_opinion_list = []
@@ -43,13 +100,19 @@ class ModelStats:
             for elem in crop_statements_until_t(self.df, time_): # de politico em politico
 
                 statements, id_politico = elem
-                P = Model(statements).runlite(l, delta,'exp')
+                P = Model(statements).runlite(l, delta,method)
                 politician_opinion = PoliticianOpinion(id_politico, P)
                 politician_opinion_list.append(politician_opinion)
                 statements, id_politico = elem
 
             politicians_opinion_in_time = PoliticiansOpinionInTime(politician_opinion_list, time_)
             from_time_to_politician_opinion_list[time_] = politicians_opinion_in_time
+
+        from_time_to_politician_opinion_list[::lags_from_reckoning]
+
+        for time_ in tqdm(times[::lags_from_reckoning]): 
+            trajectory_set = self.get_politician_trajectories(politicians_opinion_in_time, )
+            from_time_to_politician_opinion_list
         
         return 
     
@@ -66,7 +129,7 @@ class ModelStats:
             for elem in crop_statements_until_t(self.df, time_): # de politico em politico
 
                 statements, id_politico = elem
-                P = Model(statements).runlite(l, delta,'exp')
+                P = Model(statements).runlite(l, delta,method)
                 politician_opinion = PoliticianOpinion(id_politico, P)
                 politician_opinion_list.append(politician_opinion)
                 statements, id_politico = elem
