@@ -173,6 +173,15 @@ class Model:
         if score<-delta: return -1
         if score>delta: return 1
         if score<delta and score>-delta: return 0
+
+    def classifierlite_dynamic(self,score,delta_0, distance_from_reckoning, day_of_reckoning):
+
+
+        delta = (distance_from_reckoning/day_of_reckoning)*delta_0
+
+        if score<-delta: return -1
+        if score>delta: return 1
+        if score<delta and score>-delta: return 0
  
 
     def runlite(self, l , delta, method='exp'): # t é n de enesimo tweet
@@ -187,7 +196,7 @@ class Model:
 
         return self.classifierlite(scores,delta)
     
-    def runlite_dynamic(self, l , delta, distance_from_reckoning,time_of_reckoning, method='exp'): # t é n de enesimo tweet
+    def runlite_dynamic(self, l , delta, distance_from_reckoning, time_of_reckoning, method='exp'): # t é n de enesimo tweet
 
         if method=='exp':
             function = self.h_exp_escalar
@@ -197,7 +206,7 @@ class Model:
             function = self.h_mean
             scores = function()
 
-        return self.classifierlite(scores,delta)
+        return self.classifierlite_dynamic(scores, delta, distance_from_reckoning, time_of_reckoning)
     
     def runfull(self, l , delta, method='exp'): # t é n de enesimo tweet
 

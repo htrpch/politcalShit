@@ -6,6 +6,7 @@ from tqdm import tqdm
 from crop import crop_statements_until_t
 from dataclasses import dataclass
 from typing import List
+from datetime import datetime, timedelta
 
 from models import SimulateStatement, Model, PoliticianOpinion, PoliticiansOpinionInTime
 
@@ -45,13 +46,16 @@ class ModelStats:
     def get_rates(self):
         ids = self.get_politicians()
         from_id_to_df = {id : self.df[self.df['Id_politico'] == id] for id in ids}
-        from_id_to_rate = {id: days_from_td(np.mean(from_id_to_df[id].time.diff())) for id in ids}
+        from_id_to_rate = {id: 1 / (days_from_td(np.mean(from_id_to_df[id].time.diff()))) for id in ids}
+        from_id_to_rate = {id: 0 if np.isnan(from_id_to_rate[id]) else from_id_to_rate[id] for id in ids}
         return from_id_to_rate
     
     def get_window_size_fror_probability_estimation(self, days_to_reckoning):
+        ids = self.get_politicians()
         from_id_to_rate = self.get_rates()
-        
-        return from_id_to_rate
+        from_id_to_expected_number_of_posts_until_reckoning =  {id: round(from_id_to_rate[id]*days_to_reckoning)  for id in ids}
+    
+        return from_id_to_expected_number_of_posts_until_reckoning
 
     def count_lags(start_datetime, end_datetime, lagsize):
         current_datetime = start_datetime
@@ -88,33 +92,44 @@ class ModelStats:
 
         return politician_trajectories
 
-    def get_opinion_trajectory_histogram(self, l, delta, lag, lags_from_reckoning, method = 'exp'):
+    def get_opinions(self, l, delta, lag,  day_of_reckoning, score = 'exp', delta_method = 'dynamic'):
 
-        times = self.df.time[::lag]
-        politician_opinion_list = []
+
+        # times = self.df.time[::lag] -- old formula
+
+        total_delta =  (self.df.time.iloc[-1] - self.df.time.iloc[0]).total_seconds() 
+        total_delta_to_reckoning = (day_of_reckoning - self.df.time[0]).total_seconds() 
+
+        nlags =  round(total_delta/timedelta(days=lag).total_seconds())
+        time_of_reckoning = round(total_delta_to_reckoning/timedelta(days=lag).total_seconds())
+
+        times = pd.Series([self.df.time[0] + timedelta(days=lag)*i for i in range(nlags)] )
+
         from_time_to_politician_opinion_list = {}
-        from_politician_to_opinion_list = {}
         id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, times.iloc[-1])] 
+        from_politician_to_opinion_history = {id_politico : [] for id_politico in id_politicos}
 
-        for time_ in tqdm(times):
+        for n, time_ in tqdm(enumerate(times)):
+
+            politician_opinion_list = []
+
             for elem in crop_statements_until_t(self.df, time_): # de politico em politico
 
                 statements, id_politico = elem
-                P = Model(statements).runlite(l, delta,method)
+
+                if delta_method ==  'dynamic':
+                    P = Model(statements).runlite_dynamic(l, delta,time_of_reckoning - n, time_of_reckoning)
+
                 politician_opinion = PoliticianOpinion(id_politico, P)
+                from_politician_to_opinion_history[id_politico].append(P)
                 politician_opinion_list.append(politician_opinion)
                 statements, id_politico = elem
 
             politicians_opinion_in_time = PoliticiansOpinionInTime(politician_opinion_list, time_)
             from_time_to_politician_opinion_list[time_] = politicians_opinion_in_time
 
-        from_time_to_politician_opinion_list[::lags_from_reckoning]
-
-        for time_ in tqdm(times[::lags_from_reckoning]): 
-            trajectory_set = self.get_politician_trajectories(politicians_opinion_in_time, )
-            from_time_to_politician_opinion_list
-        
-        return 
+        return times, from_time_to_politician_opinion_list, from_politician_to_opinion_history
+    
     
     def get_score_histogram(self, l, delta, lag, method = 'exp'):
 
