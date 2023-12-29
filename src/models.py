@@ -174,12 +174,12 @@ class Model:
         if score>delta: return 1
         if score<delta and score>-delta: return 0
 
-    def classifierlite_dynamic(self,score,delta_0, distance_from_reckoning, day_of_reckoning):
+    def classifierlite_dynamic(self, score, delta_0, distance_from_reckoning, day_of_reckoning):
 
 
         delta = (distance_from_reckoning/day_of_reckoning)*delta_0
 
-        if score<-delta: return -1
+        if score<=-delta: return -1
         if score>delta: return 1
         if score<delta and score>-delta: return 0
  
