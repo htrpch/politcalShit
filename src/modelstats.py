@@ -113,7 +113,7 @@ class ModelStats:
         return self
     
     
-    def get_changes(self):
+    def get_changes(self, silent_neutrality=None):
         """
         Counts changes of opinion in approval sets
         following model dynamic
@@ -144,7 +144,9 @@ class ModelStats:
             O = opinions.count(-1)
             K = opinions.count(0)  
 
-            K = K + self.deputados.NOME.count() - (A + O + K)     # presuncao de neutralidade dos calados
+            if silent_neutrality:
+                K = K + self.deputados.NOME.count() - (A + O + K)     # silent neutrality assumption
+                # K = K + self.df.NOME.count() - (A + O + K)     # silent neutrality assumption
 
             total_sets = total_sets + [[A,O,K]]
 
@@ -326,7 +328,7 @@ class ModelStats:
 
         parties = [IdtoParty[i] for i in politician_id_list]
 
-        parties_participation = { i:parties.count(i) for i in np.unique(parties) }
+        parties_participation = { i: parties.count(i) for i in np.unique(parties) }
 
         partytoopinions= {}
 
