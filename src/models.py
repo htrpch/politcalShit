@@ -176,7 +176,6 @@ class Model:
 
     def classifierlite_dynamic(self, score, delta_0, distance_from_reckoning, day_of_reckoning):
 
-
         delta = (distance_from_reckoning/day_of_reckoning)*delta_0
 
         if score<=-delta: return -1

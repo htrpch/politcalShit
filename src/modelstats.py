@@ -3,10 +3,15 @@ import numpy as np
 import pandas as pd
 import time
 from tqdm import tqdm
-from crop import crop_statements_until_t
+from crop import   (crop_statements_until_t,
+                   crop_statements_from_t0_to_t, 
+                   crop_statements_until_t_by_politician, 
+                   crop_all_statements)
+
 from dataclasses import dataclass
 from typing import List
 from datetime import datetime, timedelta
+from itertools import product
 
 from models import SimulateStatement, Model, PoliticianOpinion, PoliticiansOpinionInTime
 
@@ -23,12 +28,18 @@ def days_from_td(delta):
     days = total_seconds / (24 * 3600)  
     return days
 
+def lags_from_td(delta, lag):
+    total_seconds = delta.total_seconds()
+    days = total_seconds / (lag * 24 * 3600)  
+    return days
+
 
 class ModelStats: 
 
     def __init__(self, path, deputados_path, simulate = False):
 
         if not simulate:
+
             self.df = pd.read_csv(path)
             self.df = self.df.sort_values(by=['time'])
             self.df.time = pd.to_datetime(self. df.time)
@@ -37,20 +48,26 @@ class ModelStats:
             self.deputados = pd.read_csv(deputados_path)
             
     def head(self):
+
         return self.df.head()
     
     def get_politicians(self):
+
+         # id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, self.times.iloc[-1])]  ?
         ids = list(self.df['Id_politico'].unique())
         return ids
     
-    def get_rates(self):
+    def get_rates(self, lag):
+
         ids = self.get_politicians()
         from_id_to_df = {id : self.df[self.df['Id_politico'] == id] for id in ids}
-        from_id_to_rate = {id: 1 / (days_from_td(np.mean(from_id_to_df[id].time.diff()))) for id in ids}
+        from_id_to_rate = {id: 1 / (lags_from_td(np.mean(from_id_to_df[id].time.diff()), lag)) for id in ids}
         from_id_to_rate = {id: 0 if np.isnan(from_id_to_rate[id]) else from_id_to_rate[id] for id in ids}
+
         return from_id_to_rate
     
     def get_window_size_fror_probability_estimation(self, days_to_reckoning):
+
         ids = self.get_politicians()
         from_id_to_rate = self.get_rates()
         from_id_to_expected_number_of_posts_until_reckoning =  {id: round(from_id_to_rate[id]*days_to_reckoning)  for id in ids}
@@ -58,6 +75,7 @@ class ModelStats:
         return from_id_to_expected_number_of_posts_until_reckoning
 
     def count_lags(start_datetime, end_datetime, lagsize):
+
         current_datetime = start_datetime
         count = 0
         while current_datetime < end_datetime:
@@ -65,15 +83,15 @@ class ModelStats:
             count += 1
         return count
     
-    
+    def get_timeframes(self, lag, day_of_reckoning):
 
-    def get_opinions(self, l, delta, lag,  day_of_reckoning, score = 'exp', delta_method = 'dynamic'):
-
-        # times = self.df.time[::lag] -- old formula
-
+        # current timeframe size
         total_delta =  (self.df.time.iloc[-1] - self.df.time.iloc[0]).total_seconds() 
+        # timeframe size to reckoning
         total_delta_to_reckoning = (day_of_reckoning - self.df.time.iloc[0]).total_seconds() 
+        # number of lag time intervals inside of current timeframe
         nlags =  round(total_delta/timedelta(days=lag).total_seconds())
+        # number of lag time intervals inside of current timeframe
         lags_to_reckoning = round(total_delta_to_reckoning/timedelta(days=lag).total_seconds()) # unit is lags
 
         self.nlags = nlags
@@ -82,11 +100,21 @@ class ModelStats:
         times = pd.Series([self.df.time[0] + timedelta(days=lag)*i for i in range(nlags)] )
         self.times = times
 
+        return self
+    
+
+    def get_votes(self, l, delta, lag,  day_of_reckoning, score = 'exp', delta_method = 'dynamic'):
+
+        # times = self.df.time[::lag] -- old formula
+        self.get_timeframes()
+    
+        id_politicos = self.get_politicians()
+        self.id_politicos = id_politicos
+
         from_time_to_politician_opinion_list = {}
-        id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, times.iloc[-1])] 
         from_politician_to_opinion_history = {id_politico : [] for id_politico in id_politicos}
 
-        for n, time_ in tqdm(enumerate(times)):
+        for n, time_ in tqdm(enumerate(self.times)):
 
             politician_opinion_list = []
 
@@ -95,7 +123,7 @@ class ModelStats:
                 statements, id_politico = elem
 
                 if delta_method ==  'dynamic':
-                    P = Model(statements).runlite_dynamic(l, delta, lags_to_reckoning - n, lags_to_reckoning)
+                    P = Model(statements).runlite_dynamic(l, delta, self.lags_to_reckoning - n, self.lags_to_reckoning)
                 if delta_method ==  'static':
                     P = Model(statements).runlite(l, delta)
 
@@ -111,6 +139,18 @@ class ModelStats:
         self.from_politician_to_opinion_history = from_politician_to_opinion_history
 
         return self
+    
+
+    def get_probable_vote_at_reckoning(self, statements, id_politico, l, delta,  score = 'exp', delta_method = 'dynamic'):
+
+        if delta_method ==  'dynamic':
+            P = Model(statements).runlite_dynamic(l, delta, 0, self.lags_to_reckoning)
+        if delta_method ==  'static':
+            P = Model(statements).runlite(l, delta)
+
+        politician_opinion = PoliticianOpinion(id_politico, P)
+
+        return politician_opinion
     
     
     def get_changes(self, silent_neutrality=None):
@@ -181,6 +221,38 @@ class ModelStats:
 
         return self
     
+    def get_sets(self, politician_opinion_list):
+        """
+        Get number os agents in each set
+
+        Args: 
+        
+        l - lambda parameter
+        delta - delta parameter
+        lag - time lag between measurement of system state
+
+        """
+
+        opinions = [x.opinion for x in politician_opinion_list.politician_opinions]
+
+        A = opinions.count(1)
+        O = opinions.count(-1)
+        K = opinions.count(0)  
+
+        return A, O, K
+    
+    def aprooval_criteria(self,A,O):
+        """
+        Get aprooval as boolean
+
+        Args: 
+
+        A
+        O
+        """
+
+        return A >= 2*O
+    
 
     def get_fluxes(self):
         """
@@ -230,26 +302,29 @@ class ModelStats:
         return self
 
     def get_fluxes_stats(self):
-        # CONVENÇÃO PARA OS FLUXOS
-        # FLUXES: A -> K ; K -> O ; A -> O; #
-        #
+        """
+        Get statistics for fluxes
+        Flux Convention
+        FLUXES: A -> K ; K -> O ; A -> O; 
+        """
         means = [np.mean(np.transpose(self.fluxes)[0]),np.mean(np.transpose(self.fluxes)[1]),np.mean(np.transpose(self.fluxes)[2])]
         stds = [np.std(np.transpose(self.fluxes)[0]),np.std(np.transpose(self.fluxes)[1]),np.std(np.transpose(self.fluxes)[2])]
-        #print(means)
+
         return means, stds
 
     def get_P_stats(self, Plista):
-        #pegamos a media do tamanho de cada conjunto
+        """
+        Get statistics for vote set size
+        
+        """
 
         for P in Plista:
             A = np.where(P==1)
             O = np.where(P==-1)
             K = np.where(P==0)
 
-
         means = [np.mean(np.transpose(self.fluxes)[0]),np.mean(np.transpose(self.fluxes)[1]),np.mean(np.transpose(self.fluxes)[2])]
         stds = [np.std(np.transpose(self.fluxes)[0]),np.std(np.transpose(self.fluxes)[1]),np.std(np.transpose(self.fluxes)[2])]
-        #print(means)
         return means, stds
 
     
@@ -261,9 +336,7 @@ class ModelStats:
         for d in delta:
 
             fluxes, Plista = self.get_fluxes_df_interval(self.df, d, l, lag)
-            #print('debug')
             meanss , stdss = self.get_fluxes_stats(fluxes)
-            #print('debug 1')
             m.append(meanss)
             s.append(stdss)
         
@@ -285,8 +358,8 @@ class ModelStats:
 
     def map_l_delta(self, df,delta,lambd,lag):
 
-        means3d=[]
-        stds3d=[]
+        means3d = []
+        stds3d = []
 
         for d in delta:
             print(d)
@@ -299,24 +372,23 @@ class ModelStats:
 
         mapa = np.zeros((18,18))
         
-        k=0
-        j=0
+        k = 0
+        j = 0
+
         for i in Plista[t]:
             
-            if(k%18 ==0 and k!=0):
-                k=0
-                j+=1
-            if i==0:
-                mapa[k][j]=0.5
+            if(k%18 == 0 and k != 0):
+                k = 0
+                j += 1
+            if i == 0:
+                mapa[k][j] = 0.5
             else:
-                mapa[k][j]=i
+                mapa[k][j] = i
             k+=1
         
         return mapa
 
     def organize_politicalparty(self, t):
-
-        #df = pd.read_csv('DEPUTADOS_FINAL.csv')
 
         df = self.deputados
 
@@ -360,7 +432,7 @@ class ModelStats:
 
         for t in tqdm(self.times):
 
-            parties_participation, partytoopinions, totalpartyopinion = self.organize_politicalparty( t)
+            parties_participation, partytoopinions, totalpartyopinion = self.organize_politicalparty(t)
 
             self.parties_opinion_evolution = self.parties_opinion_evolution + [totalpartyopinion]
 
@@ -375,41 +447,111 @@ class ModelStats:
         return serie_A, serie_K, serie_O
     
 
-    def get_score_histogram(self, l, delta, lag, method = 'exp'):
+    # def get_score_histogram(self, l, delta, lag, method = 'exp'):
 
-        times = self.df.time[::lag]
-        politician_opinion_list = []
-        from_time_to_politician_opinion_list = {}
-        from_politician_to_opinion_list = {}
+    #     ids = self.get_politicians()
+    #     from_id_politico_to_opinion_list = {}
+    #     politicians_opinion_histograms = []
 
-        id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, times.iloc[-1])] 
+    #     for id_politico in tqdm(ids):
+    #         opinion_in_that_time_list = []
+    #         for time_ in self.times:
+    #             opinion_in_that_time = [i for i in from_time_to_politician_opinion_list[time_].politicians_opinions if i.politician_id == id_politico][0]
+    #             opinion_in_that_time_list += [opinion_in_that_time.opinion] 
+    #         from_id_politico_to_opinion_list[id_politico] = opinion_in_that_time_list 
+    #         values, counts = np.histogram(opinion_in_that_time_list)
+    #         politicians_opinion_histograms.append(PoliticianOpinionHistogram(id_politico,values, counts))
 
-        for time_ in tqdm(times):
-            for elem in crop_statements_until_t(self.df, time_): # de politico em politico
+    #     return politicians_opinion_histograms
+    
+    def get_lists_size_m_from_list(opinion_list, m):
+        """"
+        Where m is posts per lag based on politician rate
 
+        """
+
+        n = len(opinion_list)
+        n_trajetorias = round(n/m)
+        sectioned_list = [ opinion_list[i * m : (i+1) * m] for i in range(n_trajetorias)] 
+
+        return sectioned_list
+    
+    def get_all_t0_t_whose_difference_is_lagsize(self, lag , little_lag = 12*3600 ):
+        """
+        Where m is posts per lag based on politician rate
+        """
+    
+        t0_t_pairs = []
+        i = 0
+
+        while self.time[0] + timedelta(seconds = i) < self.time[-1]:
+
+            t0_t_pairs.append((self.time[0] + timedelta(seconds = i), self.time[0] + timedelta(seconds = i) + timedelta(seconds = 24*3600*lag)))
+            i += little_lag
+
+        return t0_t_pairs
+
+
+    def get_post_trajectories_size_d_lags(self, lag, d):
+        """
+        Get all different trajectories of opinions for a single politician.
+
+        Parameters:
+        - opinions_in_time: List of PoliticiansOpinionInTime instances.
+        - politician_id: integer associated with politician.
+
+        Returns:
+        - A list of trajectories for the specified politician.
+        """
+        ids = self.get_politicians()
+        from_politician_to_d_chopped_series = {i:[] for i in ids }
+        t0_t_pairs = self.get_all_t0_t_whose_difference_is_lagsize(lag)
+
+        for (t0, t) in t0_t_pairs:
+            for elem in crop_statements_from_t0_to_t(self.df,t0,t):
                 statements, id_politico = elem
-                P = Model(statements).runlite(l, delta,method)
+                from_politician_to_d_chopped_series[id_politico] = from_politician_to_d_chopped_series[id_politico].append(statements)
+
+        self.from_politician_to_d_chopped_series = from_politician_to_d_chopped_series
+
+        return self
+    
+    def calculate_aprooval_probability(self, d, l, delta, delta_method =  'dynamic'):
+
+        ids = self.get_politicians()
+        self = self.get_post_trajectories_size_d( self.lags_to_reckoning)
+
+        all_trajectories = 0
+        aprooval_trajectories = 0
+
+        list_probable_statements_after_t = list(self.from_politician_to_d_chopped_series.values())
+        list_probable_statements_after_t = list(product(*list_probable_statements_after_t))      
+
+        all_politician_statements = crop_all_statements(self.df)
+
+        for statements_in_d in  list_probable_statements_after_t:
+            total_statements = all_politician_statements + statements_in_d
+            politician_opinion_list = []
+
+            for id_politico, statements in zip(ids, total_statements):
+
+                if delta_method ==  'dynamic':
+                    P = Model(statements).runlite_dynamic(l, delta, 0, self.lags_to_reckoning)
+                if delta_method ==  'static':
+                    P = Model(statements).runlite(l, delta)
+
                 politician_opinion = PoliticianOpinion(id_politico, P)
                 politician_opinion_list.append(politician_opinion)
-                statements, id_politico = elem
 
-            politicians_opinion_in_time = PoliticiansOpinionInTime(politician_opinion_list, time_)
-            from_time_to_politician_opinion_list[time_] = politicians_opinion_in_time
-        
-        from_id_politico_to_opinion_list = {}
-        politicians_opinion_histograms = []
+            A, O, K = self.get_sets(self, politician_opinion_list)
 
-        for id_politico in tqdm(id_politicos):
-            opinion_in_that_time_list = []
-            for time_ in times:
-                opinion_in_that_time = [i for i in from_time_to_politician_opinion_list[time_].politicians_opinions if i.politician_id == id_politico][0]
-                opinion_in_that_time_list += [opinion_in_that_time.opinion] 
-            from_id_politico_to_opinion_list[id_politico] = opinion_in_that_time_list 
-            values, counts = np.histogram(opinion_in_that_time_list)
-            politicians_opinion_histograms.append(PoliticianOpinionHistogram(id_politico,values, counts))
-
-        return politicians_opinion_histograms
+            if self.aprooval_criteria(A,O):
+                aprooval_trajectories+=1
+            all_trajectories += 1
     
+        return     aprooval_trajectories/all_trajectories 
+                
+
     def get_politician_trajectories(opinions_in_time: List[PoliticiansOpinionInTime], politician_id: int):
         """
         Get all different trajectories of opinions for a single politician.
@@ -439,34 +581,3 @@ class ModelStats:
 
 
 
-
-
-
-
-
-#Modelo([[1,0,-1,1],[1,0,-1,1]]).teste()
-
-
-#print("\n")
-#Model([1,1,1,1]).teste()
-
-#print("\n")
-#print(Model([1,0,0,1]).h_exp_escalar(0.9))
-
-# print("\n")
-# print(Model([1,0,0,1]).h_exp(0.9))
-
-# uou  = ModelStats('dataId.csv')
-
-# # print(uou.headd())
-
-# changes, Plista = uou.get_changes_df_interval(0.9,0.2,100)
-
-# # print(a)
-
-# print(Plista[1])
-
-# changes, changesL, Plista = uou.get_changes_df_interval_L(0.9,0.2,100)
-
-# print(Plista[1])
-# print(b
