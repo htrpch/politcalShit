@@ -41,7 +41,7 @@ def crop_statements_from_t0_to_t(df, t0, t):
 def crop_statements_until_t_by_politician(df, t, id_politician):
     
     df = df[df.time<t]
-    idspoliticos = df.Id_politico.unique()
+
     taui = df.isFavorable[df.Id_politico == id_politician]
     tau = taui.tolist()   
     
