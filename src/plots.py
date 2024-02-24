@@ -2,7 +2,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_fluxes(Experimento):
+def plot_fluxes(Experimento, save = False):
 
     fig, axs = plt.subplots(3, figsize = (10,5))
 
@@ -29,3 +29,61 @@ def plot_fluxes(Experimento):
     axs[2].set_ylim(-4,4)
 
     fig.tight_layout()
+
+    if save:
+        plt.savefig('Fluxes_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
+
+
+def plot_vote_sets_evolution(Experimento, save = False):
+
+    plt.figure(figsize=(10,7))
+
+    plt.title('Opinions Sets Evolution λ = %s, δ = %s'%(Experimento.l,Experimento.delta), fontsize = 20)
+
+    plt.plot(Experimento.times, Experimento.A, label = 'number of politicians in Λ')
+
+    plt.plot(Experimento.times, Experimento.O, label = 'number of politicians in Ω')
+
+    plt.plot(Experimento.times,Experimento.K, label = 'number of politicians in K')
+
+    plt.legend()
+
+    if save:
+        plt.savefig('Opinions_Sets_Evolution_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
+
+
+
+def create_visualization(Plista,t):
+
+    mapa = np.zeros((18,18))
+
+    k=0
+    j=0
+
+    for i in Plista[t]:
+        
+        if(k%18 ==0 and k!=0):
+            k=0
+            j+=1
+        if i==0:
+            mapa[k][j]=0.5
+        else:
+            mapa[k][j]=i
+        k+=1
+    
+    return mapa
+
+
+def create_animation(Plista, ordered = True):
+    
+    if ordered: 
+        for i in range(5,120,5):
+            plt.imshow(np.sort( create_visualization(Plista,i)), cmap = 'magma')
+            #plt.imshow( create_visualization(Plista,i))
+            plt.savefig('partisan' + str(i)+'.png')
+
+    if ordered:
+        for i in range(5,120,5):
+            #plt.imshow(np.sort( create_visualization(Plista,i)))
+            plt.imshow( create_visualization(Plista,i), cmap = 'magma')
+            plt.savefig('partisanloc' + str(i)+'.png')
