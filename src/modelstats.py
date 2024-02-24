@@ -56,6 +56,10 @@ class ModelStats:
 
          # id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, self.times.iloc[-1])]  ?
         ids = list(self.df['Id_politico'].unique())
+
+        for _id in ids:
+            print(_id)
+
         return ids
     
     def get_rates(self, lag):
@@ -87,18 +91,23 @@ class ModelStats:
     def get_timeframes(self, lag, day_of_reckoning):
 
         # current timeframe size
-        total_delta =  (self.df.time.iloc[-1] - self.df.time.iloc[0]).total_seconds() 
+        total_distance =  (self.df.time.iloc[-1] - self.df.time.iloc[0]).total_seconds() 
+
         # timeframe size to reckoning
-        total_delta_to_reckoning = (day_of_reckoning - self.df.time.iloc[0]).total_seconds() 
+        total_distance_to_reckoning = (day_of_reckoning - self.df.time.iloc[0]).total_seconds() 
+
         # number of lag time intervals inside of current timeframe
-        nlags =  round(total_delta/timedelta(days=lag).total_seconds())
+        nlags =  round(total_distance/timedelta(days=lag).total_seconds())
+
         # number of lag time intervals inside of current timeframe
-        lags_to_reckoning = round(total_delta_to_reckoning/timedelta(days=lag).total_seconds()) # unit is lags
+        lags_to_reckoning = round(total_distance_to_reckoning/timedelta(days=lag).total_seconds()) # unit is lags
 
         self.nlags = nlags
+
         self.lags_to_reckoning = lags_to_reckoning
 
-        times = pd.Series([self.df.time[0] + timedelta(days=lag)*i for i in range(nlags)] )
+        times = pd.Series([self.df.time.iloc[0] + timedelta(days=lag)*i for i in range(nlags)] )
+
         self.times = times
 
         return self
@@ -106,7 +115,12 @@ class ModelStats:
 
     def get_votes(self, l, delta, lag,  day_of_reckoning, score = 'exp', delta_method = 'dynamic'):
 
+        self.l = l
+        self.delta = delta
+        self.lag = lag
+
         # times = self.df.time[::lag] -- old formula
+
         self.get_timeframes(lag, day_of_reckoning)
     
         id_politicos = self.get_politicians()
@@ -539,12 +553,15 @@ class ModelStats:
     
         return   (approval_trajectories/all_trajectories)
     
-    def calculate_single_vote_probability(self, id_politico, l, delta, delta_method =  'dynamic'):
+    def calculate_single_vote_probability(self, id_politico,  delta_method =  'dynamic'):
 
         self = self.get_post_trajectories_size_d_lags( self.lags_to_reckoning)
+
         list_probable_statements_after_t = self.from_politician_to_d_chopped_series[id_politico]
+
         list_probable_statements_after_t = list(list_probable_statements_after_t)      
-        all_politician_i_statements = crop_statements_until_t_by_politician(self.df, id_politico)
+
+        all_politician_i_statements = crop_statements_until_t_by_politician(self.df, self.times.iloc[-1]+ timedelta(days = 1), id_politico)
         
         all_trajectories = 0
         A_trajectories = 0
@@ -555,9 +572,9 @@ class ModelStats:
             total_statements = all_politician_i_statements + statements_in_d
     
             if delta_method ==  'dynamic':
-                P = Model(total_statements).runlite_dynamic(l, delta, 0, self.lags_to_reckoning)
+                P = Model(total_statements).runlite_dynamic(self.l, self.delta, 0, self.lags_to_reckoning)
             if delta_method ==  'static':
-                P = Model(total_statements).runlite(l, delta)
+                P = Model(total_statements).runlite(self.l, self.delta)
 
             if P == 1 : A_trajectories += 1
             if P == -1 : O_trajectories += 1
