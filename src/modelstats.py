@@ -37,13 +37,16 @@ def lags_from_td(delta, lag):
 
 class ModelStats: 
 
-    def __init__(self, path, deputados_path, simulate = False):
+    def __init__(self, path, deputados_path, simulate = False, simulate_time = None):
 
         if not simulate:
 
             self.df = pd.read_csv(path)
             self.df = self.df.sort_values(by=['time'])
             self.df.time = pd.to_datetime(self. df.time)
+
+            if simulate_time :
+                self.df = self.df[self.df['time']< simulate_time]
 
             self.N = len(set(self.df.Id_politico))
             self.deputados = pd.read_csv(deputados_path)
@@ -57,8 +60,8 @@ class ModelStats:
          # id_politicos = [id_politico for statements, id_politico in crop_statements_until_t(self.df, self.times.iloc[-1])]  ?
         ids = list(self.df['Id_politico'].unique())
 
-        for _id in ids:
-            print(_id)
+        # for _id in ids:
+        #     print(_id)
 
         return ids
     
