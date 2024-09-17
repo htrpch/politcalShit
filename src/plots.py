@@ -109,4 +109,4 @@ def plot_party_evolution(Experimento, party = 'PT', save = False):
     
     plt.tight_layout()
     if save:
-        plt.savefig('Opinions_Sets_Evolution_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
+        plt.savefig(party+'_Opinions_Sets_Evolution_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
