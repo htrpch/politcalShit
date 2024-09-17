@@ -416,7 +416,7 @@ class ModelStats:
         politician_opinions = self.from_time_to_politician_opinion_list[t]
 
         politician_opinion_list = [x.opinion for x in politician_opinions.politician_opinions]
-        
+
         politician_id_list = [x.politician_id for x in politician_opinions.politician_opinions]
 
         parties = [IdtoParty[i] for i in politician_id_list]
@@ -440,7 +440,11 @@ class ModelStats:
 
         for party in partytoopinions.keys():
             p_A = partytoopinions[party].count(1)
-            p_K = partytoopinions[party].count(0) + self.deputados.Partido.value_counts()[party] - partytoopinions[party].count(1) - partytoopinions[party].count(-1)
+            
+           # silent neutrality assumption
+           # p_K = partytoopinions[party].count(0) + self.deputados.Partido.value_counts()[party] - partytoopinions[party].count(1) - partytoopinions[party].count(-1)
+            
+            p_K = partytoopinions[party].count(0) 
             p_O = partytoopinions[party].count(-1)
 
             totalpartyopinion[party] = {1: p_A, 0: p_K, -1: p_O}
