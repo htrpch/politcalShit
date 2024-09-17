@@ -46,7 +46,11 @@ def plot_vote_sets_evolution(Experimento, save = False):
 
     plt.plot(Experimento.times,Experimento.K, label = 'number of politicians in K')
 
+    plt.xticks(rotation=40)
+
     plt.legend()
+
+    
 
     if save:
         plt.savefig('Opinions_Sets_Evolution_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
