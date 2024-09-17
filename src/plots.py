@@ -40,11 +40,11 @@ def plot_vote_sets_evolution(Experimento, save = False):
 
     plt.title('Opinions Sets Evolution λ = %s, δ = %s'%(Experimento.l,Experimento.delta), fontsize = 20)
 
-    plt.plot(Experimento.times, Experimento.A, label = 'number of politicians in Λ')
+    plt.plot(Experimento.times, Experimento.A, label = 'number of politicians in Λ', color = 'green')
 
-    plt.plot(Experimento.times, Experimento.O, label = 'number of politicians in Ω')
+    plt.plot(Experimento.times, Experimento.O, label = 'number of politicians in Ω', color = 'red')
 
-    plt.plot(Experimento.times,Experimento.K, label = 'number of politicians in K')
+    plt.plot(Experimento.times,Experimento.K, label = 'number of politicians in K', color = 'gray')
 
     plt.xticks(rotation=40)
 
