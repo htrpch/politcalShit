@@ -1,6 +1,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 def plot_fluxes(Experimento, save = False):
 
@@ -91,3 +92,16 @@ def create_animation(Plista, ordered = True):
             #plt.imshow(np.sort( create_visualization(Plista,i)))
             plt.imshow( create_visualization(Plista,i), cmap = 'magma')
             plt.savefig('partisanloc' + str(i)+'.png')
+
+
+def plot_party_evolution(Experimento, save = False):
+    serie_A, serie_K, serie_O = Experimento.serie_temporal_partido('PT')
+
+    df_pt = pd.concat([pd.DataFrame(x) for x in [Experimento.times, serie_A, serie_K, serie_O]],axis=1)
+    print(df_pt.head())
+
+    df_pt.columns = ['time','Λ','K','Ω']
+    df_pt = df_pt.set_index('time',drop=True)
+
+
+    df_pt.plot(figsize=(10,7),color=['green', 'gray', 'red'],title='PT Opinion evolution')#    \n Lag=%s'%lag)
