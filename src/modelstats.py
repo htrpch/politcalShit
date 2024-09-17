@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import time
 from tqdm import tqdm
-from crop import   (crop_statements_until_t,
+from src.crop import   (crop_statements_until_t,
                    crop_statements_from_t0_to_t, 
                    crop_statements_until_t_by_politician, 
                    crop_all_statements)
@@ -12,14 +12,14 @@ from dataclasses import dataclass
 from typing import List
 from datetime import datetime, timedelta
 from itertools import product
+from src.models import SimulateStatement, Model, PoliticianOpinion, PoliticiansOpinionInTime
+
+
 
 import math
 
 def binomial_coefficient(n, k):
     return math.comb(n, k)
-
-
-from models import SimulateStatement, Model, PoliticianOpinion, PoliticiansOpinionInTime
 
 
 
@@ -525,7 +525,7 @@ class ModelStats:
     def calculate_approval_probability(self,  l, delta, delta_method =  'dynamic'):
 
         ids = self.get_politicians()
-        self = self.get_post_trajectories_size_d_lags( self.lags_to_reckoning)
+        self = self.get_post_trajectories_size_d_lags(self.lags_to_reckoning)
         all_trajectories = 0
         approval_trajectories = 0
         list_probable_statements_after_t = list(self.from_politician_to_d_chopped_series.values())
