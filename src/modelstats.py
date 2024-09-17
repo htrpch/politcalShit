@@ -436,11 +436,12 @@ class ModelStats:
         totalpartyopinion = {}
 
         for party in np.unique(self.deputados.Partido):
-            totalpartyopinion[party] = {1: 0, 0: + self.deputados.Partido.value_counts()[party], -1: 0}
+            #totalpartyopinion[party] = {1: 0, 0: + self.deputados.Partido.value_counts()[party], -1: 0}
+            totalpartyopinion[party] = {1: 0, 0: 0, -1: 0}
 
         for party in partytoopinions.keys():
             p_A = partytoopinions[party].count(1)
-            
+
            # silent neutrality assumption
            # p_K = partytoopinions[party].count(0) + self.deputados.Partido.value_counts()[party] - partytoopinions[party].count(1) - partytoopinions[party].count(-1)
             
