@@ -68,6 +68,7 @@ class ModelStats:
     def get_rates(self, lag):
 
         ids = self.get_politicians()
+
         from_id_to_df = {id : self.df[self.df['Id_politico'] == id] for id in ids}
         from_id_to_rate = {id: 1 / (lags_from_td(np.mean(from_id_to_df[id].time.diff()), lag)) for id in ids}
         from_id_to_rate = {id: 0 if np.isnan(from_id_to_rate[id]) else from_id_to_rate[id] for id in ids}
@@ -413,7 +414,9 @@ class ModelStats:
         IdtoParty = {i:df[df.Id_politico == i]['Partido'].values[0] for i in df.Id_politico} 
 
         politician_opinions = self.from_time_to_politician_opinion_list[t]
+
         politician_opinion_list = [x.opinion for x in politician_opinions.politician_opinions]
+        
         politician_id_list = [x.politician_id for x in politician_opinions.politician_opinions]
 
         parties = [IdtoParty[i] for i in politician_id_list]

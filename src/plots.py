@@ -39,8 +39,10 @@ def plot_vote_sets_evolution(Experimento, save = False):
 
     plt.figure(figsize=(10,7))
 
-    plt.title('Opinions Sets Evolution λ = %s, δ = %s'%(Experimento.l,Experimento.delta), fontsize = 20)
+    plt.suptitle('Opinions Sets Evolution', fontsize = 20)
 
+    plt.title('λ = %s, δ = %s'%(Experimento.l,Experimento.delta), fontsize = 16)
+   
     plt.plot(Experimento.times, Experimento.A, label = 'number of politicians in Λ', color = 'green')
 
     plt.plot(Experimento.times, Experimento.O, label = 'number of politicians in Ω', color = 'red')
@@ -103,7 +105,8 @@ def plot_party_evolution(Experimento, party = 'PT', save = False):
     df_party.columns = ['time','Λ','K','Ω']
     df_party = df_party.set_index('time',drop=True)
 
-    df_party.plot(figsize=(10,7),color=['green', 'gray', 'red'],title='PT Opinion evolution')#    \n Lag=%s'%lag)
-
+    df_party.plot(figsize=(10,7),color=['green', 'gray', 'red'], title=party + ' Opinion evolution')#    \n Lag=%s'%lag)
+    
+    plt.tight_layout()
     if save:
         plt.savefig('Opinions_Sets_Evolution_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
