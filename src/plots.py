@@ -95,17 +95,15 @@ def create_animation(Plista, ordered = True):
 
 
 def plot_party_evolution(Experimento, party = 'PT', save = False):
-    
+
     serie_A, serie_K, serie_O = Experimento.serie_temporal_partido(party)
 
-    df_pt = pd.concat([pd.DataFrame(x) for x in [Experimento.times, serie_A, serie_K, serie_O]],axis=1)
-    print(df_pt.head())
+    df_party = pd.concat([pd.DataFrame(x) for x in [Experimento.times, serie_A, serie_K, serie_O]],axis=1)
 
-    df_pt.columns = ['time','Λ','K','Ω']
-    df_pt = df_pt.set_index('time',drop=True)
+    df_party.columns = ['time','Λ','K','Ω']
+    df_party = df_party.set_index('time',drop=True)
 
-
-    df_pt.plot(figsize=(10,7),color=['green', 'gray', 'red'],title='PT Opinion evolution')#    \n Lag=%s'%lag)
+    df_party.plot(figsize=(10,7),color=['green', 'gray', 'red'],title='PT Opinion evolution')#    \n Lag=%s'%lag)
 
     if save:
         plt.savefig('Opinions_Sets_Evolution_λ_'+str(Experimento.l)+'_δ_'+str(Experimento.delta)+'.png')
