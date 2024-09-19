@@ -43,16 +43,19 @@ def plot_vote_sets_evolution(Experimento, save = False):
 
     plt.title('λ = %s, δ = %s'%(Experimento.l,Experimento.delta), fontsize = 16)
    
-    plt.plot(Experimento.times, Experimento.A, label = 'number of politicians in Λ', color = 'green')
+    plt.plot(Experimento.times, Experimento.A, label = 'number of congressmen in Λ', color = 'green')
 
-    plt.plot(Experimento.times, Experimento.O, label = 'number of politicians in Ω', color = 'red')
+    plt.plot(Experimento.times, Experimento.O, label = 'number of congressmen in Ω', color = 'red')
 
-    plt.plot(Experimento.times,Experimento.K, label = 'number of politicians in K', color = 'gray')
+    plt.plot(Experimento.times,Experimento.K, label = 'number of congressmen in K', color = 'gray')
+
+    plt.xlabel('Time', fontsize = 14)
+
+    plt.ylabel('Number of Congressmen', fontsize = 14)
 
     plt.xticks(rotation=40)
 
     plt.legend()
-
     
 
     if save:
@@ -105,7 +108,13 @@ def plot_party_evolution(Experimento, party = 'PT', save = False):
     df_party.columns = ['time','Λ','K','Ω']
     df_party = df_party.set_index('time',drop=True)
 
-    df_party.plot(figsize=(10,7),color=['green', 'gray', 'red'], title=party + ' Opinion evolution')#    \n Lag=%s'%lag)
+    df_party.plot(figsize=(10,7),color=['green', 'gray', 'red'])#    \n Lag=%s'%lag)
+
+    plt.title('%s Opinions Sets Evolution'%party, fontsize = 20) 
+
+    plt.xlabel('Time', fontsize = 14)
+
+    plt.ylabel('Number of Congressmen', fontsize = 14)
     
     plt.tight_layout()
     if save:
